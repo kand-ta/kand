@@ -18,7 +18,7 @@ rand = "0.9.0"
 rayon = "1.10.0"
 rust_decimal = "1.36.0"
 serde = { version = "1.0.218", features = ["derive"] }
-serde_json = "1.0.139"
+serde_json = "1.0.140"
 kand = { path = "./kand", default-features = false, features = ["f64", "i64", "check"] }
 thiserror = "2.0.11"
 

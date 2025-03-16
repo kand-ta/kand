@@ -183,3 +183,137 @@ pub fn adr_inc(
 
     sma::sma_inc(prev_adr, new_range, old_range, param_period)
 }
+
+#[cfg(test)]
+mod tests {
+
+    use approx::assert_relative_eq;
+
+    use super::*;
+
+    #[test]
+    fn test_adr_calculation() {
+        let input_high = vec![10.0, 12.0, 15.0, 14.0, 13.0];
+        let input_low = vec![8.0, 9.0, 11.0, 10.0, 9.0];
+        let mut output_adr = vec![0.0; input_high.len()];
+        let period = 3;
+
+        adr(&input_high, &input_low, period, &mut output_adr).unwrap();
+
+        // First (period-1) values are NaN
+        assert!(output_adr[0].is_nan());
+        assert!(output_adr[1].is_nan());
+
+        // daily ranges: [2.0, 3.0, 4.0, 4.0, 4.0]
+        // output_adr[2] = average of [2.0, 3.0, 4.0] = 3.0
+        assert_relative_eq!(output_adr[2], 3.0, max_relative = 1e-12);
+
+        // output_adr[3] = average of [3.0, 4.0, 4.0] = 3.6666...
+        assert_relative_eq!(output_adr[3], 3.6666666666666665, max_relative = 1e-12);
+
+        // output_adr[4] = average of [4.0, 4.0, 4.0] = 4.0
+        assert_relative_eq!(output_adr[4], 4.0, max_relative = 1e-12);
+    }
+
+    #[test]
+    fn test_adr_incremental() {
+        let input_high = vec![10.0, 12.0, 15.0, 14.0, 13.0, 16.0, 17.0, 15.5, 14.2, 13.7];
+        let input_low = vec![8.0, 9.0, 11.0, 10.0, 9.0, 12.0, 14.0, 13.5, 12.0, 11.3];
+        let period = 5;
+        let mut output_adr = vec![0.0; input_high.len()];
+
+        // Calculate ADR using the standard method
+        adr(&input_high, &input_low, period, &mut output_adr).unwrap();
+
+        // Test incremental calculation matches regular calculation
+        // Start from the first valid ADR value (after the lookback period)
+        let lookback = lookback(period).unwrap();
+
+        // Start with the first valid ADR value
+        let mut prev_adr = output_adr[lookback];
+
+        // Test each incremental step
+        for i in lookback + 1..input_high.len() {
+            let new_high = input_high[i];
+            let new_low = input_low[i];
+            let old_high = input_high[i - period];
+            let old_low = input_low[i - period];
+
+            // Calculate next ADR using incremental method
+            let next_adr = adr_inc(prev_adr, new_high, new_low, old_high, old_low, period).unwrap();
+
+            // Verify incremental result matches the regular calculation
+            assert_relative_eq!(next_adr, output_adr[i], epsilon = 1e-12);
+
+            // Update prev_adr for next iteration
+            prev_adr = next_adr;
+        }
+    }
+
+    #[test]
+    fn test_adr_with_extended_data() {
+        // More extensive test with a larger dataset
+        let high_prices = vec![
+            35.25, 35.70, 36.10, 36.25, 36.50, 36.75, 36.70, 36.55, 36.80, 36.90, 37.05, 37.15,
+            37.25, 37.40, 37.50, 37.60, 37.55, 37.35, 37.20, 37.10,
+        ];
+        let low_prices = vec![
+            34.75, 35.20, 35.70, 35.80, 36.10, 36.20, 36.05, 36.10, 36.40, 36.50, 36.65, 36.80,
+            36.90, 37.00, 37.10, 37.20, 37.00, 36.80, 36.70, 36.60,
+        ];
+        let period = 7;
+        let mut output_full = vec![0.0; high_prices.len()];
+
+        adr(&high_prices, &low_prices, period, &mut output_full).unwrap();
+
+        // Test all valid values are calculated correctly
+        let lookback = lookback(period).unwrap();
+        let mut prev_adr = output_full[lookback];
+
+        for i in lookback + 1..high_prices.len() {
+            let result = adr_inc(
+                prev_adr,
+                high_prices[i],
+                low_prices[i],
+                high_prices[i - period],
+                low_prices[i - period],
+                period,
+            )
+            .unwrap();
+
+            assert_relative_eq!(result, output_full[i], epsilon = 1e-12);
+            prev_adr = result;
+        }
+    }
+
+    #[test]
+    fn test_adr_edge_cases() {
+        // Test edge case: period = 2 (minimum allowed)
+        let high_prices = vec![10.0, 11.0, 12.0, 13.0];
+        let low_prices = vec![9.0, 9.5, 10.5, 11.5];
+        let period = 2;
+        let mut output = vec![0.0; high_prices.len()];
+
+        adr(&high_prices, &low_prices, period, &mut output).unwrap();
+
+        // Verify first value is NaN (lookback = 1)
+        assert!(output[0].is_nan());
+
+        // Test incremental calculation for the minimum period
+        let mut prev_adr = output[1]; // First valid value with period = 2
+        for i in 2..high_prices.len() {
+            let result = adr_inc(
+                prev_adr,
+                high_prices[i],
+                low_prices[i],
+                high_prices[i - period],
+                low_prices[i - period],
+                period,
+            )
+            .unwrap();
+
+            assert_relative_eq!(result, output[i], epsilon = 1e-12);
+            prev_adr = result;
+        }
+    }
+}

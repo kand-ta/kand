@@ -156,7 +156,7 @@ Recommend Rust version `>=1.80`.
 
 - [x] **AD** - Chaikin A/D Line
 - [x] **ADOSC** - Chaikin A/D Oscillator
-- [x] **ADR** - Average Daily Range **[Untested]**
+- [x] **ADR** - Average Daily Range
 - [x] **ADX** - Average Directional Movement Index
 - [x] **ADXR** - Average Directional Movement Index Rating
 - [ ] **APO** - Absolute Price Oscillator

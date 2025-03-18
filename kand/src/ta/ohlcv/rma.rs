@@ -284,7 +284,7 @@ mod tests {
         let period = 7;
         let mut output_full = vec![0.0; prices.len()];
 
-        // Calculate RMA using the production function
+        // Calculate RMA using the rma function
         rma(&prices, period, &mut output_full).unwrap();
 
         // Manually compute the full expected RMA for comparison
@@ -330,18 +330,30 @@ mod tests {
         let mut output = vec![0.0; 3];
 
         // Test invalid period
-        assert!(rma(&input, 1, &mut output).is_err());
+        assert!(matches!(
+            rma(&input, 1, &mut output),
+            Err(KandError::InvalidParameter)
+        ));
 
         // Test length mismatch
         let mut short_output = vec![0.0; 2];
-        assert!(rma(&input, 2, &mut short_output).is_err());
+        assert!(matches!(
+            rma(&input, 2, &mut short_output),
+            Err(KandError::LengthMismatch)
+        ));
 
         // Test insufficient data
-        assert!(rma(&input, 4, &mut output).is_err());
+        assert!(matches!(
+            rma(&input, 4, &mut output),
+            Err(KandError::InsufficientData)
+        ));
 
         // Test empty data
         let empty: Vec<TAFloat> = vec![];
         let mut empty_output: Vec<TAFloat> = vec![];
-        assert!(rma(&empty, 2, &mut empty_output).is_err());
+        assert!(matches!(
+            rma(&empty, 2, &mut empty_output),
+            Err(KandError::InvalidData)
+        ));
     }
 }

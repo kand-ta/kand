@@ -207,7 +207,7 @@ Recommend Rust version `>=1.80`.
 - [x] **PLUS_DM** - Plus Directional Movement
 - [ ] **PPO** - Percentage Price Oscillator
 - [ ] **RENKO** - Renko Chart
-- [x] **RMA** - Rolling Moving Average **[Untested]**
+- [x] **RMA** - Rolling Moving Average
 - [x] **ROC** - Rate of change : ((price/prevPrice)-1)*100
 - [x] **ROCP** - Rate of change Percentage: (price-prevPrice)/prevPrice
 - [x] **ROCR** - Rate of change ratio: (price/prevPrice)

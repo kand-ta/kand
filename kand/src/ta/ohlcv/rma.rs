@@ -184,3 +184,149 @@ pub fn rma_inc(
     let alpha = 1.0 / param_period as TAFloat;
     Ok(input_current.mul_add(alpha, prev_rma * (1.0 - alpha)))
 }
+
+#[cfg(test)]
+mod tests {
+    use approx::assert_relative_eq;
+
+    use super::*;
+
+    #[test]
+    fn test_rma_calculation() {
+        let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+        let param_period = 5;
+        let mut output_rma = vec![0.0; input.len()];
+
+        rma(&input, param_period, &mut output_rma).unwrap();
+
+        // First (period-1) values should be NaN
+        for value in output_rma.iter().take(param_period - 1) {
+            assert!(value.is_nan());
+        }
+
+        // First valid value should be SMA of first 5 values
+        assert_relative_eq!(output_rma[4], 3.0, epsilon = 1e-12); // (1+2+3+4+5)/5 = 3.0
+
+        // Subsequent values follow RMA formula with alpha = 1/5 = 0.2
+        // RMA[5] = 6.0*0.2 + 3.0*0.8 = 1.2 + 2.4 = 3.6
+        assert_relative_eq!(output_rma[5], 3.6, epsilon = 1e-12);
+
+        // RMA[6] = 7.0*0.2 + 3.6*0.8 = 1.4 + 2.88 = 4.28
+        assert_relative_eq!(output_rma[6], 4.28, epsilon = 1e-12);
+
+        // RMA[7] = 8.0*0.2 + 4.28*0.8 = 1.6 + 3.424 = 5.024
+        assert_relative_eq!(output_rma[7], 5.024, epsilon = 1e-12);
+
+        // RMA[8] = 9.0*0.2 + 5.024*0.8 = 1.8 + 4.0192 = 5.8192
+        assert_relative_eq!(output_rma[8], 5.8192, epsilon = 1e-12);
+
+        // RMA[9] = 10.0*0.2 + 5.8192*0.8 = 2.0 + 4.65536 = 6.65536
+        assert_relative_eq!(output_rma[9], 6.65536, epsilon = 1e-12);
+    }
+
+    #[test]
+    fn test_rma_incremental() {
+        let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+        let param_period = 4;
+        let mut output_rma = vec![0.0; input.len()];
+
+        rma(&input, param_period, &mut output_rma).unwrap();
+
+        // Test incremental calculation matches regular calculation
+        // Start from the first valid RMA value (after the lookback period)
+        let lookback = lookback(param_period).unwrap();
+
+        // Start with the first valid RMA value
+        let mut prev_rma = output_rma[lookback];
+
+        // Test each incremental step
+        for i in lookback + 1..input.len() {
+            // Calculate next RMA using incremental method
+            let next_rma = rma_inc(input[i], prev_rma, param_period).unwrap();
+
+            // Verify incremental result matches the regular calculation
+            assert_relative_eq!(next_rma, output_rma[i], epsilon = 1e-12);
+
+            // Update prev_rma for next iteration
+            prev_rma = next_rma;
+        }
+    }
+
+    #[test]
+    fn test_rma_edge_cases() {
+        // Test edge case: period = 2 (minimum allowed)
+        let input = vec![10.0, 20.0, 30.0, 40.0];
+        let period = 2;
+        let mut output = vec![0.0; input.len()];
+
+        rma(&input, period, &mut output).unwrap();
+
+        // Verify first value is NaN (lookback = 1)
+        assert!(output[0].is_nan());
+
+        // First valid value should be SMA of first 2 values
+        assert_relative_eq!(output[1], 15.0, epsilon = 1e-12); // (10+20)/2 = 15
+
+        // RMA[2] = 30*0.5 + 15*0.5 = 15 + 7.5 = 22.5
+        assert_relative_eq!(output[2], 22.5, epsilon = 1e-12);
+
+        // RMA[3] = 40*0.5 + 22.5*0.5 = 20 + 11.25 = 31.25
+        assert_relative_eq!(output[3], 31.25, epsilon = 1e-12);
+    }
+
+    #[test]
+    fn test_rma_with_extended_data() {
+        // More extensive test with a larger dataset
+        let prices = vec![
+            35.25, 35.70, 36.10, 36.25, 36.50, 36.75, 36.70, 36.55, 36.80, 36.90, 37.05, 37.15,
+            37.25, 37.40, 37.50, 37.60, 37.55, 37.35, 37.20, 37.10,
+        ];
+        let period = 7;
+        let mut output_full = vec![0.0; prices.len()];
+
+        rma(&prices, period, &mut output_full).unwrap();
+
+        // Verify first (period-1) values are NaN
+        for i in 0..period - 1 {
+            assert!(output_full[i].is_nan());
+        }
+
+        // First valid value should be SMA of first 7 values
+        let expected_first_valid =
+            (prices[0] + prices[1] + prices[2] + prices[3] + prices[4] + prices[5] + prices[6])
+                / 7.0;
+        assert_relative_eq!(output_full[6], expected_first_valid, epsilon = 1e-12);
+
+        // Test incremental calculation matches regular calculation
+        let lookback = lookback(period).unwrap();
+        let mut prev_rma = output_full[lookback];
+
+        for i in lookback + 1..prices.len() {
+            let result = rma_inc(prices[i], prev_rma, period).unwrap();
+            assert_relative_eq!(result, output_full[i], epsilon = 1e-12);
+            prev_rma = result;
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "check")]
+    fn test_rma_error_conditions() {
+        let input = vec![1.0, 2.0, 3.0];
+        let mut output = vec![0.0; 3];
+
+        // Test invalid period
+        assert!(rma(&input, 1, &mut output).is_err());
+
+        // Test length mismatch
+        let mut short_output = vec![0.0; 2];
+        assert!(rma(&input, 2, &mut short_output).is_err());
+
+        // Test insufficient data
+        assert!(rma(&input, 4, &mut output).is_err());
+
+        // Test empty data
+        let empty: Vec<TAFloat> = vec![];
+        let mut empty_output: Vec<TAFloat> = vec![];
+        assert!(rma(&empty, 2, &mut empty_output).is_err());
+    }
+}

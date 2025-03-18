@@ -284,27 +284,42 @@ mod tests {
         let period = 7;
         let mut output_full = vec![0.0; prices.len()];
 
+        // Calculate RMA using the production function
         rma(&prices, period, &mut output_full).unwrap();
 
-        // Verify first (period-1) values are NaN
+        // Manually compute the full expected RMA for comparison
+        let alpha = 1.0 / period as TAFloat;
+        let mut expected_rma = vec![TAFloat::NAN; prices.len()];
+
+        // First valid value is the SMA of the first `period` elements
+        let mut sum = 0.0;
+        for i in 0..period {
+            sum += prices[i];
+        }
+        expected_rma[period - 1] = sum / period as TAFloat;
+
+        // Remaining values follow the RMA formula
+        for i in period..prices.len() {
+            expected_rma[i] = prices[i].mul_add(alpha, expected_rma[i - 1] * (1.0 - alpha));
+        }
+
+        // Check NaNs for the first (period-1) values
         for i in 0..period - 1 {
             assert!(output_full[i].is_nan());
         }
 
-        // First valid value should be SMA of first 7 values
-        let expected_first_valid =
-            (prices[0] + prices[1] + prices[2] + prices[3] + prices[4] + prices[5] + prices[6])
-                / 7.0;
-        assert_relative_eq!(output_full[6], expected_first_valid, epsilon = 1e-12);
+        // Assert all subsequent values match expected RMA
+        for i in period - 1..prices.len() {
+            assert_relative_eq!(output_full[i], expected_rma[i], epsilon = 1e-12);
+        }
 
-        // Test incremental calculation matches regular calculation
+        // Also confirm incremental RMA matches
         let lookback = lookback(period).unwrap();
         let mut prev_rma = output_full[lookback];
-
         for i in lookback + 1..prices.len() {
-            let result = rma_inc(prices[i], prev_rma, period).unwrap();
-            assert_relative_eq!(result, output_full[i], epsilon = 1e-12);
-            prev_rma = result;
+            let next_rma = rma_inc(prices[i], prev_rma, period).unwrap();
+            assert_relative_eq!(next_rma, output_full[i], epsilon = 1e-12);
+            prev_rma = next_rma;
         }
     }
 

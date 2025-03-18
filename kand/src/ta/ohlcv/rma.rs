@@ -324,7 +324,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "check")]
     fn test_rma_error_conditions() {
         let input = vec![1.0, 2.0, 3.0];
         let mut output = vec![0.0; 3];

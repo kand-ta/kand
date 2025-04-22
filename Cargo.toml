@@ -14,7 +14,7 @@ num_enum = "0.7.3"
 num-traits = "0.2.19"
 numpy = "0.24.0"
 pyo3 = "0.24.0"
-rand = "0.9.0"
+rand = "0.9.1"
 rayon = "1.10.0"
 rust_decimal = "1.36.0"
 serde = { version = "1.0.219", features = ["derive"] }

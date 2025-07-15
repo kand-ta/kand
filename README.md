@@ -257,3 +257,11 @@ This project is licensed under either of the following licenses, at your option:
 - MIT license ([LICENSE-MIT](LICENSE-MIT) or [https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT))
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in kand by you, as defined in the Apache-2.0 license, shall be dually licensed as above, without any additional terms or conditions.
+
+## Disclaimer
+
+This project is provided "as is" without any warranties or guarantees of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, accuracy, or non-infringement. The authors and contributors of this project are not liable for any damages, losses, or liabilities resulting from the use of this project, including but not limited to financial losses, investment decisions, or trading outcomes.
+
+Trading or investing in financial instruments involves high risks, including the potential loss of some or all of your investment amount, and may not be suitable for all users. Before using this project for any financial purposes, you should carefully consider your investment objectives, level of experience, and risk tolerance, and seek independent professional advice if needed.
+
+The information, data, and calculations provided by this project are for informational purposes only and do not constitute financial, investment, or trading advice, recommendations, or solicitations to buy or sell any securities or assets. We do not guarantee the accuracy, completeness, or timeliness of any output, and users assume all risks and liabilities associated with its use.

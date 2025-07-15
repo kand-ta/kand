@@ -31,7 +31,7 @@
   <a href="https://github.com/kand-ta/kand">GitHub</a>
 </p>
 <h2 align="center">
-  <b>Kand: A Blazingly Fast Technical Analysis Library, written in Rust.</b>
+  <b>Kand: A Modern, High-Performance Technical Analysis Library</b>
 </h2>
 
 > ⚠️ **Development Status**: This project is under active development. APIs may change, and some features might not be fully implemented or tested yet. Contributions and feedback are welcome!
@@ -45,32 +45,32 @@
 <p align="center">
   <i>EMA calculation performance comparison across different implementations.</i>
 </p>
-
 ## Why Kand?
 
-- **⚡ Unmatched Performance**
-  Built in Rust, delivering blazing speed and memory safety, rivaling TALib’s peak.
+Kand is engineered as a modern replacement for TA-Lib, addressing its core limitations—such as single-threaded execution, Python GIL constraints, memory overhead, and inefficient real-time processing—while preserving its strengths in comprehensive indicator support and ease of integration. Built in Rust, Kand delivers superior performance, safety, and flexibility for quantitative trading, data science, and financial analysis.
 
-- **🔓 Multithreading Unleashed**
-  Breaks free from Python’s GIL, enabling seamless parallel processing beyond single-threaded limits.
+- **⚡ Superior Performance with Memory Safety**
+  Leveraging Rust's efficiency, Kand achieves speeds rivaling or exceeding TA-Lib's peak performance, but with built-in memory safety that eliminates common vulnerabilities and reduces overhead in TA-Lib's C-based implementation.
 
-- **⚙️ Real-Time Incremental Core**
-  O(1) complexity updates, redefining high-efficiency computation.
+- **🔓 True Multithreading Capabilities**
+  Unlike TA-Lib, which is hindered by Python's GIL and single-threaded design, Kand enables seamless parallel processing across multiple cores, unlocking significant gains in multi-threaded environments for large-scale computations.
 
-- **🚀 Native Zero-Copy**
-  Deeply integrated with NumPy, ensuring lossless data flow at maximum speed.
+- **⚙️ Efficient Real-Time Incremental Updates**
+  Kand introduces O(1) complexity for incremental calculations, ideal for streaming data and real-time applications—overcoming TA-Lib's reliance on batch processing, which introduces latency and inefficiency in dynamic scenarios.
 
-- **📊 Pioneering Indicators**
-  Features advanced tools like Vegas, VWAP, and Supertrend, pushing analysis frontiers.
+- **🚀 Zero-Copy NumPy Integration**
+  With native, zero-copy data sharing via Rust-NumPy bindings, Kand ensures lossless, high-speed data flow between Python and Rust, addressing TA-Lib's memory copying overhead and enabling ultra-low latency (~7ns) operations.
 
-- **📦 Lightweight & Effortless**
-  Ultra-compact package with one-line install—no bloat, no complex dependencies.
+- **📊 Expanded Indicator Suite**
+  Kand supports a wide array of standard indicators (e.g., EMA, RSI, MACD) like TA-Lib, while pioneering advanced ones such as Vegas, VWAP, and Supertrend, extending analytical capabilities beyond TA-Lib's traditional scope.
 
-- **💻 Universal Compatibility**
-  Runs flawlessly across macOS, Linux, and Windows.
+- **📦 Streamlined Installation and Lightweight Design**
+  Install with a single `pip install kand` command, featuring precompiled wheels and no complex C dependencies—solving TA-Lib's notoriously cumbersome setup and reducing package bloat for effortless deployment.
 
-> If you truly understand ta-lib, you will fall in love with kand. Dive deeper at [why kand](https://kand-ta.github.io/kand/about).
->
+- **💻 Broad Cross-Platform Compatibility**
+  Seamlessly runs on macOS, Linux, and Windows, with additional support for JavaScript/TypeScript via WebAssembly, providing greater universality than TA-Lib's platform-specific challenges.
+
+> *If you truly understand TA-Lib's limitations, you'll appreciate Kand's innovations.* Kand isn't just about fixing what's broken—it's about enabling what's possible. Dive deeper at [**why kand**](https://kand-ta.github.io/kand/about).
 
 ### Python API
 

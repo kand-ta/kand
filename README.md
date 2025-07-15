@@ -5,9 +5,6 @@
   <a href="https://crates.io/crates/kand">
     <img src="https://img.shields.io/crates/v/kand.svg" alt="Crates.io"/>
   </a>
-  <a href="https://docs.rs/kand">
-    <img src="https://docs.rs/kand/badge.svg" alt="Docs.rs"/>
-  </a>
   <a href="https://pypi.python.org/pypi/kand">
     <img src="https://img.shields.io/pypi/v/kand.svg" alt="PyPI Version"/>
   </a>
@@ -16,6 +13,9 @@
   </a>
   <a href="https://github.com/kand-ta/kand/actions/workflows/CI.yml">
     <img src="https://github.com/kand-ta/kand/actions/workflows/CI.yml/badge.svg" alt="CI Status"/>
+  </a>
+  <a href="https://docs.rs/kand">
+    <img src="https://docs.rs/kand/badge.svg" alt="Docs.rs"/>
   </a>
   <a href="https://pypi.python.org/pypi/kand">
     <img src="https://img.shields.io/pypi/l/kand.svg" alt="License"/>

@@ -45,6 +45,7 @@
 <p align="center">
   <i>EMA calculation performance comparison across different implementations.</i>
 </p>
+
 ## Why Kand?
 
 Kand is engineered as a modern replacement for TA-Lib, addressing its core limitations—such as single-threaded execution, Python GIL constraints, memory overhead, and inefficient real-time processing—while preserving its strengths in comprehensive indicator support and ease of integration. Built in Rust, Kand delivers superior performance, safety, and flexibility for quantitative trading, data science, and financial analysis.

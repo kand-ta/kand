@@ -154,7 +154,7 @@ pub fn supertrend(
 
     // Calculate basic bands
     for i in lookback..len {
-        let hl2 = (input_high[i] + input_low[i]) / 2.0;
+        let hl2 = f64::midpoint(input_high[i], input_low[i]);
         basic_upper[i] = param_multiplier.mul_add(output_atr[i], hl2);
         basic_lower[i] = param_multiplier.mul_add(-output_atr[i], hl2);
     }
@@ -297,7 +297,7 @@ pub fn supertrend_inc(
 
     let output_atr = atr::atr_inc(input_high, input_low, prev_close, prev_atr, param_period)?;
 
-    let hl2 = (input_high + input_low) / 2.0;
+    let hl2 = f64::midpoint(input_high, input_low);
     let basic_upper = param_multiplier.mul_add(output_atr, hl2);
     let basic_lower = param_multiplier.mul_add(-output_atr, hl2);
 

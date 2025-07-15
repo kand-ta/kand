@@ -1,7 +1,5 @@
 use crate::{
-    KandError,
-    TAFloat,
-    TAInt,
+    KandError, TAFloat, TAInt,
     helper::{lower_shadow_length, period_to_k, real_body_length, upper_shadow_length},
     types::Signal,
 };

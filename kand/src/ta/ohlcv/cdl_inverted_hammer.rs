@@ -1,7 +1,5 @@
 use crate::{
-    KandError,
-    TAFloat,
-    TAInt,
+    KandError, TAFloat, TAInt,
     helper::{lower_shadow_length, period_to_k, real_body_length, upper_shadow_length},
     types::Signal,
 };
@@ -261,7 +259,8 @@ pub fn cdl_inverted_hammer_inc(
     let is_small_body = body <= body_avg && body > 0.0;
     let has_long_upper_shadow = up_shadow >= param_factor * body;
     let has_minimal_lower_shadow = down_shadow <= body;
-    let body_in_lower_half = TAFloat::max(input_open, input_close) < (input_high + input_low) / 2.0;
+    let body_in_lower_half =
+        TAFloat::max(input_open, input_close) < f64::midpoint(input_high, input_low);
 
     let signal =
         if is_small_body && has_long_upper_shadow && has_minimal_lower_shadow && body_in_lower_half

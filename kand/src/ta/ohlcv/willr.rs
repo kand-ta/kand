@@ -1,7 +1,5 @@
 use crate::{
-    EPSILON,
-    KandError,
-    TAFloat,
+    EPSILON, KandError, TAFloat,
     helper::{highest_bars, lowest_bars},
 };
 

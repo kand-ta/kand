@@ -123,7 +123,7 @@ pub fn ha(
 
     // Calculate first candle
     output_close[0] = (input_open[0] + input_high[0] + input_low[0] + input_close[0]) / 4.0;
-    output_open[0] = (input_open[0] + input_close[0]) / 2.0;
+    output_open[0] = f64::midpoint(input_open[0], input_close[0]);
     output_high[0] = input_high[0];
     output_low[0] = input_low[0];
 
@@ -212,7 +212,7 @@ pub fn ha_inc(
     }
 
     let ha_close = (curr_open + curr_high + curr_low + curr_close) / 4.0;
-    let ha_open = (prev_ha_open + prev_ha_close) / 2.0;
+    let ha_open = f64::midpoint(prev_ha_open, prev_ha_close);
     let ha_high = curr_high.max(ha_open).max(ha_close);
     let ha_low = curr_low.min(ha_open).min(ha_close);
 

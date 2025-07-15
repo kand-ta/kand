@@ -1,5 +1,8 @@
 # Makefile for Rust project using Cargo
 
+.PHONY: all
+all: pre-commit
+
 # Build the project with all features enabled in release mode
 .PHONY: build
 build:
@@ -62,12 +65,11 @@ uv-sync:
 	uv venv
 	uv lock --upgrade
 	uv sync
-	uv run "./scripts/gen_stub.py" kand python/kand/_kand.pyi
+	uv run "./scripts/gen_stub.py" kand kand-py/python/kand/_kand.pyi
 
 # Run pre-commit hooks on all files
 .PHONY: pre-commit
 pre-commit:
-	pre-commit run --all-files
 	$(MAKE) build
 	$(MAKE) test
 	$(MAKE) clippy

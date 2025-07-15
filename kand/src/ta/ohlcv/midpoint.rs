@@ -143,7 +143,7 @@ pub fn midpoint(
 
         output_highest[i] = highest;
         output_lowest[i] = lowest;
-        output_midpoint[i] = (highest + lowest) / 2.0;
+        output_midpoint[i] = f64::midpoint(highest, lowest);
     }
 
     // Fill initial values with NAN
@@ -200,7 +200,7 @@ pub fn midpoint(
 /// let (midpoint, new_highest, new_lowest) =
 ///     midpoint::midpoint_inc(current_price, prev_highest, prev_lowest, period).unwrap();
 /// ```
-pub fn midpoint_inc(
+pub const fn midpoint_inc(
     input_price: TAFloat,
     prev_highest: TAFloat,
     prev_lowest: TAFloat,
@@ -222,7 +222,7 @@ pub fn midpoint_inc(
 
     let new_highest = input_price.max(prev_highest);
     let new_lowest = input_price.min(prev_lowest);
-    let midpoint = (new_highest + new_lowest) / 2.0;
+    let midpoint = f64::midpoint(new_highest, new_lowest);
 
     Ok((midpoint, new_highest, new_lowest))
 }

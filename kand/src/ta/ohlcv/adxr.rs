@@ -156,7 +156,7 @@ pub fn adxr(
     // Calculate ADXR = (Current ADX + ADX period days ago) / 2
     // First valid value should be at index lookback (period * 3 - 2)
     for i in lookback..len {
-        output_adxr[i] = (output_adx[i] + output_adx[i - param_period + 1]) / 2.0;
+        output_adxr[i] = f64::midpoint(output_adx[i], output_adx[i - param_period + 1]);
     }
 
     // Fill initial values with NAN
@@ -275,7 +275,7 @@ pub fn adxr_inc(
             param_period,
         )?;
 
-    let output_adxr = (output_adx + prev_adx_period_ago) / 2.0;
+    let output_adxr = f64::midpoint(output_adx, prev_adx_period_ago);
 
     Ok((
         output_adxr,

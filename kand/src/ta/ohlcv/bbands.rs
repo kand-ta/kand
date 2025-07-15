@@ -1,6 +1,5 @@
 use crate::{
-    KandError,
-    TAFloat,
+    KandError, TAFloat,
     ta::{ohlcv::sma, stats::var},
 };
 

@@ -23,32 +23,32 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 #[cfg(feature = "i64")]
 #[repr(i64)]
 pub enum MAType {
-    DEMA  = 0,
-    EMA   = 1,
-    KAMA  = 2,
-    MAMA  = 3,
-    RMA   = 4,
-    SMA   = 5,
-    T3    = 6,
-    TEMA  = 7,
+    DEMA = 0,
+    EMA = 1,
+    KAMA = 2,
+    MAMA = 3,
+    RMA = 4,
+    SMA = 5,
+    T3 = 6,
+    TEMA = 7,
     TRIMA = 8,
-    WMA   = 9,
+    WMA = 9,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
 #[cfg(not(feature = "i64"))]
 #[repr(i32)]
 pub enum MAType {
-    DEMA  = 0,
-    EMA   = 1,
-    KAMA  = 2,
-    MAMA  = 3,
-    RMA   = 4,
-    SMA   = 5,
-    T3    = 6,
-    TEMA  = 7,
+    DEMA = 0,
+    EMA = 1,
+    KAMA = 2,
+    MAMA = 3,
+    RMA = 4,
+    SMA = 5,
+    T3 = 6,
+    TEMA = 7,
     TRIMA = 8,
-    WMA   = 9,
+    WMA = 9,
 }
 
 impl Default for MAType {

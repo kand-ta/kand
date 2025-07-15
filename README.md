@@ -14,8 +14,8 @@
   <a href="https://pypi.python.org/pypi/kand">
     <img src="https://img.shields.io/pypi/pyversions/kand.svg" alt="Python Versions"/>
   </a>
-  <a href="https://github.com/rust-ta/kand/actions/workflows/CI.yml">
-    <img src="https://github.com/rust-ta/kand/actions/workflows/CI.yml/badge.svg" alt="CI Status"/>
+  <a href="https://github.com/kand-ta/kand/actions/workflows/CI.yml">
+    <img src="https://github.com/kand-ta/kand/actions/workflows/CI.yml/badge.svg" alt="CI Status"/>
   </a>
   <a href="https://pypi.python.org/pypi/kand">
     <img src="https://img.shields.io/pypi/l/kand.svg" alt="License"/>
@@ -25,10 +25,10 @@
   <b>Documentation</b>:
   <a href="https://docs.rs/kand">Rust</a>
   -
-  <a href="https://rust-ta.github.io/kand/">Python</a>
+  <a href="https://kand-ta.github.io/kand/">Python</a>
   |
   <b>Repository</b>:
-  <a href="https://github.com/rust-ta/kand">GitHub</a>
+  <a href="https://github.com/kand-ta/kand">GitHub</a>
 </p>
 <h2 align="center">
   <b>Kand: A Blazingly Fast Technical Analysis Library, written in Rust.</b>
@@ -69,9 +69,10 @@
 - **💻 Universal Compatibility**
   Runs flawlessly across macOS, Linux, and Windows.
 
-Dive deeper at our [official documentation](https://rust-ta.github.io/kand/about).
+> If you truly understand ta-lib, you will fall in love with kand. Dive deeper at [why kand](https://kand-ta.github.io/kand/about).
+>
 
-#### Python API
+### Python API
 
 The Python interface of `kand` leverages PyO3 for ultra-low latency bindings (~7ns overhead) to the Rust core, seamlessly integrating with NumPy for zero-copy operations and true thread-safe calculations. Below are examples for batch and incremental usage.
 
@@ -97,7 +98,7 @@ new_ema = ema_inc(new_price, prev_ema, period=3)
 
 ---
 
-#### Rust API
+### Rust API
 
 The Rust interface in `kand` provides a high-performance, type-safe implementation of EMA with flexible parameter control. It supports both Vec and ndarray inputs for batch and incremental calculations, as shown below.
 
@@ -145,7 +146,7 @@ You can take latest release from [`crates.io`](https://crates.io/crates/kand), o
 
 ```toml
 [dependencies]
-kand = { git = "https://github.com/rust-ta/kand", rev = "<optional git tag>" }
+kand = { git = "https://github.com/kand-ta/kand", rev = "<optional git tag>" }
 ```
 
 Recommend Rust version `>=1.80`.
@@ -180,17 +181,7 @@ Recommend Rust version `>=1.80`.
 - [x] **EMA** - Exponential Moving Average
 - [x] **ECL** - Expanded Camarilla Levels **[Untested]**
 - [x] **HA** - Heikin Ashi Chart
-- [ ] **HT_DCPERIOD** - Hilbert Transform - Dominant Cycle Period
-- [ ] **HT_DCPHASE** - Hilbert Transform - Dominant Cycle Phase
-- [ ] **HT_PHASOR** - Hilbert Transform - Phasor Components
-- [ ] **HT_SINE** - Hilbert Transform - SineWave
-- [ ] **HT_TRENDLINE** - Hilbert Transform - Instantaneous Trendline
-- [ ] **HT_TRENDMODE** - Hilbert Transform - Trend vs Cycle Mode
 - [ ] **KAMA** - Kaufman Adaptive Moving Average
-- [ ] **LINEARREG** - Linear Regression
-- [ ] **LINEARREG_ANGLE** - Linear Regression Angle
-- [ ] **LINEARREG_INTERCEPT** - Linear Regression Intercept
-- [ ] **LINEARREG_SLOPE** - Linear Regression Slope
 - [x] **MACD** - Moving Average Convergence/Divergence **[Unstable]**
 - [ ] **MACDEXT** - MACD with controllable MA type
 - [ ] **MAMA** - MESA Adaptive Moving Average
@@ -257,12 +248,11 @@ We are passionate about supporting contributors of all levels of experience and 
 you get involved in the project. See the
 [contributing guide](https://github.com/rust-ta/kand/blob/main/CONTRIBUTING.md) to get started.
 
-
 ## License
 
 This project is licensed under either of the following licenses, at your option:
-- Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
-  <https://www.apache.org/licenses/LICENSE-2.0>)
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or <https://opensource.org/licenses/MIT>)
+
+- Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0))
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or [https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT))
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in kand by you, as defined in the Apache-2.0 license, shall be dually licensed as above, without any additional terms or conditions.

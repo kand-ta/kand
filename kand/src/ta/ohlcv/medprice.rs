@@ -93,7 +93,7 @@ pub fn medprice(
     }
 
     for i in 0..len {
-        output_medprice[i] = (input_high[i] + input_low[i]) / 2.0;
+        output_medprice[i] = f64::midpoint(input_high[i], input_low[i]);
     }
 
     Ok(())
@@ -124,7 +124,7 @@ pub fn medprice(
 /// let result = medprice::medprice_inc(high, low).unwrap();
 /// assert_eq!(result, 9.0);
 /// ```
-pub fn medprice_inc(input_high: TAFloat, input_low: TAFloat) -> Result<TAFloat, KandError> {
+pub const fn medprice_inc(input_high: TAFloat, input_low: TAFloat) -> Result<TAFloat, KandError> {
     #[cfg(feature = "deep-check")]
     {
         if input_high.is_nan() || input_low.is_nan() {
@@ -132,7 +132,7 @@ pub fn medprice_inc(input_high: TAFloat, input_low: TAFloat) -> Result<TAFloat, 
         }
     }
 
-    Ok((input_high + input_low) / 2.0)
+    Ok(f64::midpoint(input_high, input_low))
 }
 
 #[cfg(test)]

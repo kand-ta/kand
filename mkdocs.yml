@@ -1,13 +1,13 @@
 # Project information
 site_name: Kand - Blazingly Fast Technical Analysis Library
-site_url: https://rust-ta.github.io/kand/
+site_url: https://kand-ta.github.io/kand/
 site_author: CtrlX
 site_description: >-
   kand - Pure Rust reimplementation of TA-Lib for fast financial analysis.
 
 # Repository
-repo_url: https://github.com/rust-ta/kand
-repo_name: rust-ta/kand
+repo_url: https://github.com/kand-ta/kand
+repo_name: kand-ta/kand
 
 # Copyright
 copyright: >

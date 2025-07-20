@@ -231,7 +231,7 @@ Recommend Rust version `>=1.80`.
 - [ ] **ALPHA** - Alpha: Measures excess returns over market
 - [ ] **BETA** - Beta: Measures sensitivity to market volatility
 - [ ] **CALMAR** - Calmar Ratio: Annual return to maximum drawdown ratio
-- [ ] **CORREL** - Pearson's Correlation Coefficient
+- [x] **CORREL** - Pearson's Correlation Coefficient
 - [ ] **DRAWDOWN** - Maximum Drawdown: Maximum potential loss
 - [ ] **KELLY** - Kelly Criterion: Optimal position sizing
 - [x] **MAX** - Highest value over a specified period

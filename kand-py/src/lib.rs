@@ -115,6 +115,8 @@ fn kand(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(ta::ohlcv::vwap::vwap_inc_py, m)?)?;
 
     // Add all stats functions
+    m.add_function(wrap_pyfunction!(ta::stats::correl::correl_py, m)?)?;
+    m.add_function(wrap_pyfunction!(ta::stats::correl::correl_inc_py, m)?)?;
     m.add_function(wrap_pyfunction!(ta::stats::max::max_py, m)?)?;
     m.add_function(wrap_pyfunction!(ta::stats::max::max_inc_py, m)?)?;
     m.add_function(wrap_pyfunction!(ta::stats::min::min_py, m)?)?;

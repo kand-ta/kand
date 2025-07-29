@@ -8,6 +8,9 @@
   <a href="https://pypi.python.org/pypi/kand">
     <img src="https://img.shields.io/pypi/v/kand.svg" alt="PyPI Version"/>
   </a>
+  <a href="https://www.npmjs.com/package/kand">
+    <img src="https://img.shields.io/npm/v/kand.svg" alt="NPM Version"/>
+  </a>
   <a href="https://pypi.python.org/pypi/kand">
     <img src="https://img.shields.io/pypi/pyversions/kand.svg" alt="Python Versions"/>
   </a>
@@ -34,7 +37,8 @@
   <b>Kand: A Modern, High-Performance Technical Analysis Library</b>
 </h2>
 
-> ⚠️ **Development Status**: This project is under active development. APIs may change, and some features might not be fully implemented or tested yet. Contributions and feedback are welcome!
+> [!WARNING]
+> This project is under active development. APIs may change, and some features might not be fully implemented or tested yet. Contributions and feedback are welcome!
 
 <p align="center">
   <picture align="center">
@@ -145,12 +149,21 @@ pip install kand
 
 You can take latest release from [`crates.io`](https://crates.io/crates/kand), or if you want to use the latest features / performance improvements point to the `main` branch of this repo.
 
-```toml
-[dependencies]
-kand = { git = "https://github.com/kand-ta/kand", rev = "<optional git tag>" }
+```bash
+cargo add kand
 ```
 
 Recommend Rust version `>=1.80`.
+
+### JavaScript/TypeScript
+
+For web applications and Node.js projects, install Kand via npm:
+
+```bash
+npm i kand
+```
+
+The package provides WebAssembly bindings for high-performance technical analysis in JavaScript and TypeScript environments.
 
 ## Functions List
 

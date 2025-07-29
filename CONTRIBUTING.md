@@ -4,6 +4,46 @@ First off, thank you for considering contributing to Kand! It's people like you 
 
 Following these guidelines helps to communicate that you respect the time of the developers managing and developing this open source project. In return, they should reciprocate that respect in addressing your issue or assessing patches and features.
 
+## Development Setup
+
+Before you start developing, you need to install several required tools:
+
+### Required Tools
+
+1. **Install Rust development tools**:
+
+   ```bash
+   cargo install cargo-udeps git-cliff wasm-pack
+   ```
+
+   - `cargo-udeps`: Finds unused dependencies
+   - `git-cliff`: Generates changelogs
+   - `wasm-pack`: WebAssembly package builder
+
+2. **Install uv** (Python package manager):
+   Follow the installation guide at: <https://github.com/astral-sh/uv>
+
+3. **Install maturin** (Python-Rust bindings):
+
+   ```bash
+   uv tool install maturin
+   ```
+
+4. **Install pre-commit** (Git hooks framework):
+
+   ```bash
+   pip install pre-commit
+   ```
+
+5. **Install make** (Build automation tool):
+   - **Linux/macOS**: Usually pre-installed, or install via package manager
+   - **Windows**: Install via one of the following options:
+     - Install [Git for Windows](https://git-scm.com/download/win) (includes make)
+     - Install [Chocolatey](https://chocolatey.org/) and run `choco install make`
+     - Install [MSYS2](https://www.msys2.org/) and run `pacman -S make`
+
+Make sure all these tools are properly installed before proceeding with development.
+
 ## Development Workflow
 
 Our project is structured into two main parts:

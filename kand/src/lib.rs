@@ -126,4 +126,12 @@ pub type TAInt = i64; // Default to i64 when no features are enabled
 
 /// Global EPSILON value used for floating-point comparisons
 /// to account for rounding errors in calculations.
-pub const EPSILON: TAFloat = 0.000_000_000_1; // 10^-10
+///
+/// This value is automatically set based on the floating-point type:
+/// - f32: Uses f32::EPSILON (≈ 1.19e-7)
+/// - f64: Uses f64::EPSILON (≈ 2.22e-16)
+#[cfg(all(feature = "f32", not(feature = "f64")))]
+pub const EPSILON: TAFloat = f32::EPSILON;
+
+#[cfg(not(all(feature = "f32", not(feature = "f64"))))]
+pub const EPSILON: TAFloat = f64::EPSILON;

@@ -145,13 +145,13 @@ import { ema, emaInc } from 'kand';
 // Batch EMA computation for price series
 const prices = new Float64Array([10.0, 11.0, 12.0, 13.0, 14.0]);
 const emaValues = ema(prices, 3, null);
-console.log(emaValues); // [NaN, NaN, 11.5, 12.25, 13.125]
+console.log(emaValues);
 
 // Incremental EMA update for streaming data
 const prevEma = 13.5;
 const newPrice = 15.0;
 const newEma = emaInc(newPrice, prevEma, 3, null);
-console.log(newEma); // 14.25
+console.log(newEma);
 
 // Custom smoothing factor
 const customK = 0.5;
@@ -162,7 +162,7 @@ const customEma = emaInc(newPrice, prevEma, 3, customK);
 
 - **WebAssembly Performance**: Near-native speed through optimized WASM bindings.
 - **Type Safety**: Full TypeScript definitions with comprehensive JSDoc documentation.
-- **Universal**: Works in both browser environments and Node.js applications.
+- **ES Module Standard**: Adheres to the ES module standard for native integration with modern JavaScript environments.
 
 ---
 

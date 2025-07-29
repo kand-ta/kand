@@ -137,31 +137,30 @@ let new_ema = ema::ema_inc(new_price, prev_ema, 3, None)?;
 
 ### JavaScript/TypeScript API
 
-The JavaScript/TypeScript interface provides WebAssembly bindings for high-performance technical analysis in web applications and Node.js projects. It delivers near-native performance with a clean, Promise-based API.
+The JavaScript/TypeScript interface provides WebAssembly bindings for high-performance technical analysis in web applications and Node.js projects. It delivers near-native performance with a clean, synchronous API.
 
 ```typescript
 import { ema, emaInc } from 'kand';
 
 // Batch EMA computation for price series
-const prices = [10.0, 11.0, 12.0, 13.0, 14.0];
-const emaValues = await ema(prices, 3, null);
+const prices = new Float64Array([10.0, 11.0, 12.0, 13.0, 14.0]);
+const emaValues = ema(prices, 3, null);
 console.log(emaValues); // [NaN, NaN, 11.5, 12.25, 13.125]
 
 // Incremental EMA update for streaming data
 const prevEma = 13.5;
 const newPrice = 15.0;
-const newEma = await emaInc(newPrice, prevEma, 3, null);
+const newEma = emaInc(newPrice, prevEma, 3, null);
 console.log(newEma); // 14.25
 
 // Custom smoothing factor
 const customK = 0.5;
-const customEma = await emaInc(newPrice, prevEma, 3, customK);
+const customEma = emaInc(newPrice, prevEma, 3, customK);
 ```
 
 **Key Features:**
 
 - **WebAssembly Performance**: Near-native speed through optimized WASM bindings.
-- **Promise-Based**: Async/await compatible API for modern JavaScript workflows.
 - **Type Safety**: Full TypeScript definitions with comprehensive JSDoc documentation.
 - **Universal**: Works in both browser environments and Node.js applications.
 

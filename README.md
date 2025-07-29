@@ -79,7 +79,7 @@
 
 ### Python API
 
-The Python interface of `kand` leverages PyO3 for ultra-low latency bindings (~7ns overhead) to the Rust core, seamlessly integrating with NumPy for zero-copy operations and true thread-safe calculations. Below are examples for batch and incremental usage.
+The Python interface of `kand` leverages PyO3 for ultra-low latency bindings to the Rust core, seamlessly integrating with NumPy for zero-copy operations and true thread-safe calculations. Below are examples for batch and incremental usage.
 
 ```python
 import numpy as np
@@ -132,6 +132,38 @@ let new_ema = ema::ema_inc(new_price, prev_ema, 3, None)?;
 - **Memory Efficiency**: Leverages mutable buffers (`&mut Vec<f64>` or `&mut Array1<f64>`) to store results, slashing memory allocations.
 - **Error Handling**: Returns `Result<(), KandError>` or `Result<f64, KandError>` for reliable failure detection (e.g., invalid period, NaN inputs).
 - **Incremental Design**: O(1) updates tailored for real-time systems.
+
+---
+
+### JavaScript/TypeScript API
+
+The JavaScript/TypeScript interface provides WebAssembly bindings for high-performance technical analysis in web applications and Node.js projects. It delivers near-native performance with a clean, Promise-based API.
+
+```typescript
+import { ema, emaInc } from 'kand';
+
+// Batch EMA computation for price series
+const prices = [10.0, 11.0, 12.0, 13.0, 14.0];
+const emaValues = await ema(prices, 3, null);
+console.log(emaValues); // [NaN, NaN, 11.5, 12.25, 13.125]
+
+// Incremental EMA update for streaming data
+const prevEma = 13.5;
+const newPrice = 15.0;
+const newEma = await emaInc(newPrice, prevEma, 3, null);
+console.log(newEma); // 14.25
+
+// Custom smoothing factor
+const customK = 0.5;
+const customEma = await emaInc(newPrice, prevEma, 3, customK);
+```
+
+**Key Features:**
+
+- **WebAssembly Performance**: Near-native speed through optimized WASM bindings.
+- **Promise-Based**: Async/await compatible API for modern JavaScript workflows.
+- **Type Safety**: Full TypeScript definitions with comprehensive JSDoc documentation.
+- **Universal**: Works in both browser environments and Node.js applications.
 
 ---
 

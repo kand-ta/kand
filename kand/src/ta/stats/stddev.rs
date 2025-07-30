@@ -6,7 +6,7 @@ use crate::{KandError, TAFloat, ta::stats::var};
 /// can be generated. For Standard Deviation, this equals the period minus 1.
 ///
 /// # Arguments
-/// * `param_period` - The time period for Standard Deviation calculation (must be >= 2)
+/// * `opt_period` - The time period for Standard Deviation calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period (period - 1) on success, or error on failure
@@ -21,8 +21,8 @@ use crate::{KandError, TAFloat, ta::stats::var};
 /// let lookback = stddev::lookback(period).unwrap();
 /// assert_eq!(lookback, 13); // lookback is period - 1
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
-    var::lookback(param_period)
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
+    var::lookback(opt_period)
 }
 
 /// Calculates Standard Deviation for a price series.
@@ -43,7 +43,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_prices` - Array of input values to calculate Standard Deviation
-/// * `param_period` - The time period for calculation (must be >= 2)
+/// * `opt_period` - The time period for calculation (must be >= 2)
 /// * `output_stddev` - Array to store calculated Standard Deviation values
 /// * `output_sum` - Array to store running sum values
 /// * `output_sum_sq` - Array to store running sum of squares values
@@ -78,13 +78,13 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn stddev(
     input_prices: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_stddev: &mut [TAFloat],
     output_sum: &mut [TAFloat],
     output_sum_sq: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_prices.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -94,7 +94,7 @@ pub fn stddev(
         if output_stddev.len() != len || output_sum.len() != len || output_sum_sq.len() != len {
             return Err(KandError::LengthMismatch);
         }
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
         if len <= lookback {
@@ -114,7 +114,7 @@ pub fn stddev(
     // Calculate variance first
     var::var(
         input_prices,
-        param_period,
+        opt_period,
         output_stddev,
         output_sum,
         output_sum_sq,
@@ -138,7 +138,7 @@ pub fn stddev(
 /// * `prev_sum` - Previous sum of values in the period
 /// * `prev_sum_sq` - Previous sum of squared values in the period
 /// * `input_old_price` - Price value to remove from the period
-/// * `param_period` - The time period for calculation (must be >= 2)
+/// * `opt_period` - The time period for calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing:
@@ -167,14 +167,14 @@ pub fn stddev_inc(
     prev_sum: TAFloat,
     prev_sum_sq: TAFloat,
     input_old_price: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat), KandError> {
     let (var, new_sum, new_sum_sq) = var::var_inc(
         input_price,
         prev_sum,
         prev_sum_sq,
         input_old_price,
-        param_period,
+        opt_period,
     )?;
 
     Ok((var.sqrt(), new_sum, new_sum_sq))
@@ -193,14 +193,14 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_stddev = vec![0.0; input_close.len()];
         let mut output_sum = vec![0.0; input_close.len()];
         let mut output_sum_sq = vec![0.0; input_close.len()];
 
         stddev(
             &input_close,
-            param_period,
+            opt_period,
             &mut output_stddev,
             &mut output_sum,
             &mut output_sum_sq,
@@ -243,8 +243,8 @@ mod tests {
                 input_close[i],
                 prev_sum,
                 prev_sum_sq,
-                input_close[i - param_period],
-                param_period,
+                input_close[i - opt_period],
+                opt_period,
             )
             .unwrap();
             assert_relative_eq!(stddev, output_stddev[i], epsilon = 0.0001);

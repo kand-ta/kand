@@ -7,13 +7,13 @@ use crate::{
 /// Calculates the lookback period required for Midpoint Price calculation.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for calculation (must be >= 2)
+/// * `opt_period` - The time period used for calculation (must be >= 2)
 ///
 /// # Returns
-/// * `Result<usize, KandError>` - Returns `param_period - 1` on success
+/// * `Result<usize, KandError>` - Returns `opt_period - 1` on success
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Example
 /// ```
@@ -21,15 +21,15 @@ use crate::{
 /// let lookback = midprice::lookback(14).unwrap();
 /// assert_eq!(lookback, 13);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates Midpoint Price for a price series.
@@ -53,7 +53,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Arguments
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
-/// * `param_period` - Calculation period (must be >= 2)
+/// * `opt_period` - Calculation period (must be >= 2)
 /// * `output_midprice` - Buffer to store calculated midpoint prices
 /// * `output_highest_high` - Buffer to store highest highs
 /// * `output_lowest_low` - Buffer to store lowest lows
@@ -83,13 +83,13 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 pub fn midprice(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_midprice: &mut [TAFloat],
     output_highest_high: &mut [TAFloat],
     output_lowest_low: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -125,8 +125,8 @@ pub fn midprice(
 
     // Calculate midpoint price for each window
     for i in lookback..len {
-        let highest_idx = highest_bars(input_high, i, param_period)?;
-        let lowest_idx = lowest_bars(input_low, i, param_period)?;
+        let highest_idx = highest_bars(input_high, i, opt_period)?;
+        let lowest_idx = lowest_bars(input_low, i, opt_period)?;
 
         let highest_high = input_high[i - highest_idx];
         let lowest_low = input_low[i - lowest_idx];
@@ -156,7 +156,7 @@ pub fn midprice(
 /// * `input_low` - Current low price
 /// * `prev_highest_high` - Previous period's highest high
 /// * `prev_lowest_low` - Previous period's lowest low
-/// * `param_period` - Calculation period (must be >= 2)
+/// * `opt_period` - Calculation period (must be >= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat), KandError>` - Returns (midprice, `new_highest_high`, `new_lowest_low`)
@@ -183,11 +183,11 @@ pub const fn midprice_inc(
     input_low: TAFloat,
     prev_highest_high: TAFloat,
     prev_lowest_low: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -228,7 +228,7 @@ mod tests {
             35166.0, 35170.9, 35154.1, 35186.0, 35143.9, 35080.1, 35021.1, 34950.1, 34966.0,
             35012.3, 35022.2, 34931.6, 34911.0, 34952.5, 34977.9, 35039.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_midprice = vec![0.0; input_high.len()];
         let mut output_highest_high = vec![0.0; input_high.len()];
         let mut output_lowest_low = vec![0.0; input_high.len()];
@@ -236,7 +236,7 @@ mod tests {
         midprice(
             &input_high,
             &input_low,
-            param_period,
+            opt_period,
             &mut output_midprice,
             &mut output_highest_high,
             &mut output_lowest_low,
@@ -270,7 +270,7 @@ mod tests {
                 input_low[i],
                 prev_highest_high,
                 prev_lowest_low,
-                param_period,
+                opt_period,
             )
             .unwrap();
 

@@ -17,8 +17,8 @@ use crate::{KandError, TAFloat};
 /// assert_eq!(lookback, 13);
 /// ```
 #[must_use]
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
-    sma::lookback(param_period)
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
+    sma::lookback(opt_period)
 }
 
 /// Calculates the Average Daily Range (ADR) for the entire price series.
@@ -52,19 +52,19 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// use kand::ohlcv::adr;
 /// let input_high = vec![10.0, 12.0, 15.0, 14.0, 13.0];
 /// let input_low = vec![8.0, 9.0, 11.0, 10.0, 9.0];
-/// let param_period = 3;
+/// let opt_period = 3;
 /// let mut output_adr = vec![0.0; 5];
 ///
-/// adr::adr(&input_high, &input_low, param_period, &mut output_adr).unwrap();
+/// adr::adr(&input_high, &input_low, opt_period, &mut output_adr).unwrap();
 /// ```
 pub fn adr(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_adr: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -98,7 +98,7 @@ pub fn adr(
             .map(|(&h, &l)| h - l),
     );
 
-    sma::sma(&ranges, param_period, output_adr)
+    sma::sma(&ranges, opt_period, output_adr)
 }
 
 /// Calculates the latest Average Daily Range (ADR) value incrementally using the previous ADR value.
@@ -138,11 +138,11 @@ pub fn adr_inc(
     input_new_low: TAFloat,
     input_old_high: TAFloat,
     input_old_low: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -162,7 +162,7 @@ pub fn adr_inc(
     let new_range = input_new_high - input_new_low;
     let old_range = input_old_high - input_old_low;
 
-    sma::sma_inc(prev_adr, new_range, old_range, param_period)
+    sma::sma_inc(prev_adr, new_range, old_range, opt_period)
 }
 
 #[cfg(test)]

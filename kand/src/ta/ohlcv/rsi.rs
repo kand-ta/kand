@@ -6,30 +6,30 @@ use crate::{KandError, TAFloat};
 /// to establish the initial average gain and loss values.
 ///
 /// # Arguments
-/// * `param_period` - The number of periods to look back for RSI calculation (must be >= 2)
+/// * `opt_period` - The number of periods to look back for RSI calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The required lookback period on success
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Example
 /// ```
 /// use kand::ohlcv::rsi;
 ///
-/// let param_period = 14;
-/// let lookback = rsi::lookback(param_period).unwrap();
+/// let opt_period = 14;
+/// let lookback = rsi::lookback(opt_period).unwrap();
 /// assert_eq!(lookback, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Relative Strength Index (RSI) for a price series.
@@ -62,7 +62,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_prices` - Array of price values (typically closing prices)
-/// * `param_period` - The time period for RSI calculation (typical values: 14, 9, or 25)
+/// * `opt_period` - The time period for RSI calculation (typical values: 14, 9, or 25)
 /// * `output_rsi` - Array to store calculated RSI values
 /// * `output_avg_gain` - Array to store average gain values for each period
 /// * `output_avg_loss` - Array to store average loss values for each period
@@ -73,7 +73,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input array is empty
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 /// * `KandError::InsufficientData` - If input length is less than or equal to lookback period
 /// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
@@ -82,14 +82,14 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// use kand::ohlcv::rsi;
 ///
 /// let input_prices = vec![44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.10, 45.42];
-/// let param_period = 5;
+/// let opt_period = 5;
 /// let mut output_rsi = vec![0.0; input_prices.len()];
 /// let mut output_avg_gain = vec![0.0; input_prices.len()];
 /// let mut output_avg_loss = vec![0.0; input_prices.len()];
 ///
 /// rsi::rsi(
 ///     &input_prices,
-///     param_period,
+///     opt_period,
 ///     &mut output_rsi,
 ///     &mut output_avg_gain,
 ///     &mut output_avg_loss,
@@ -98,13 +98,13 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn rsi(
     input_prices: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_rsi: &mut [TAFloat],
     output_avg_gain: &mut [TAFloat],
     output_avg_loss: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_prices.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -148,8 +148,8 @@ pub fn rsi(
     }
 
     // Calculate first RSI value
-    let first_avg_gain = gains / param_period as TAFloat;
-    let first_avg_loss = losses / param_period as TAFloat;
+    let first_avg_gain = gains / opt_period as TAFloat;
+    let first_avg_loss = losses / opt_period as TAFloat;
 
     output_avg_gain[lookback] = first_avg_gain;
     output_avg_loss[lookback] = first_avg_loss;
@@ -164,7 +164,7 @@ pub fn rsi(
     // Calculate remaining RSI values using smoothed averages
     let mut prev_avg_gain = first_avg_gain;
     let mut prev_avg_loss = first_avg_loss;
-    let smoothing = param_period as TAFloat;
+    let smoothing = opt_period as TAFloat;
 
     for i in lookback + 1..len {
         let diff = input_prices[i] - input_prices[i - 1];
@@ -220,13 +220,13 @@ pub fn rsi(
 /// * `prev_price` - Previous period's price value
 /// * `prev_avg_gain` - Previous period's average gain
 /// * `prev_avg_loss` - Previous period's average loss
-/// * `param_period` - The time period for RSI calculation
+/// * `opt_period` - The time period for RSI calculation
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing (RSI value, new average gain, new average loss)
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 /// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
@@ -247,12 +247,12 @@ pub fn rsi_inc(
     prev_price: TAFloat,
     prev_avg_gain: TAFloat,
     prev_avg_loss: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -276,7 +276,7 @@ pub fn rsi_inc(
         (0.0, diff.abs())
     };
 
-    let smoothing = param_period as TAFloat;
+    let smoothing = opt_period as TAFloat;
     let output_avg_gain = prev_avg_gain.mul_add(smoothing - 1.0, curr_gain) / smoothing;
     let output_avg_loss = prev_avg_loss.mul_add(smoothing - 1.0, curr_loss) / smoothing;
 
@@ -305,14 +305,14 @@ mod tests {
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0, 35114.5, 35097.2,
             35092.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_rsi = vec![0.0; input_prices.len()];
         let mut output_avg_gain = vec![0.0; input_prices.len()];
         let mut output_avg_loss = vec![0.0; input_prices.len()];
 
         rsi(
             &input_prices,
-            param_period,
+            opt_period,
             &mut output_rsi,
             &mut output_avg_gain,
             &mut output_avg_loss,
@@ -320,7 +320,7 @@ mod tests {
         .unwrap();
 
         // Verify first 14 values are NaN
-        for value in output_rsi.iter().take(param_period) {
+        for value in output_rsi.iter().take(opt_period) {
             assert!(value.is_nan());
         }
 
@@ -332,18 +332,18 @@ mod tests {
         assert_relative_eq!(output_rsi[18], 40.465_006_259_629_995, epsilon = 0.00001);
 
         // Now test incremental calculation matches regular calculation
-        let mut prev_avg_gain = output_avg_gain[param_period];
-        let mut prev_avg_loss = output_avg_loss[param_period];
-        let mut prev_price = input_prices[param_period];
+        let mut prev_avg_gain = output_avg_gain[opt_period];
+        let mut prev_avg_loss = output_avg_loss[opt_period];
+        let mut prev_price = input_prices[opt_period];
 
         // Test each incremental step
-        for i in param_period + 1..input_prices.len() {
+        for i in opt_period + 1..input_prices.len() {
             let (result, new_avg_gain, new_avg_loss) = rsi_inc(
                 input_prices[i],
                 prev_price,
                 prev_avg_gain,
                 prev_avg_loss,
-                param_period,
+                opt_period,
             )
             .unwrap();
 

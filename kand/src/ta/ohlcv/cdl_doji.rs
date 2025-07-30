@@ -57,8 +57,8 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_body_percent` - Maximum body size as percentage of range (e.g. 5.0 for 5%)
-/// * `param_shadow_equal_percent` - Maximum shadow length difference percentage (e.g. 100.0)
+/// * `opt_body_percent` - Maximum body size as percentage of range (e.g. 5.0 for 5%)
+/// * `opt_shadow_equal_percent` - Maximum shadow length difference percentage (e.g. 100.0)
 /// * `output_signals` - Output array for pattern signals
 ///
 /// # Returns
@@ -84,8 +84,8 @@ pub const fn lookback() -> Result<usize, KandError> {
 ///     &input_high,
 ///     &input_low,
 ///     &input_close,
-///     5.0,   // param_body_percent
-///     100.0, // param_shadow_equal_percent
+///     5.0,   // opt_body_percent
+///     100.0, // opt_shadow_equal_percent
 ///     &mut output_signals,
 /// )
 /// .unwrap();
@@ -95,8 +95,8 @@ pub fn cdl_doji(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_body_percent: TAFloat,
-    param_shadow_equal_percent: TAFloat,
+    opt_body_percent: TAFloat,
+    opt_shadow_equal_percent: TAFloat,
     output_signals: &mut [TAInt],
 ) -> Result<(), KandError> {
     let len = input_open.len();
@@ -113,7 +113,7 @@ pub fn cdl_doji(
         }
 
         // Check parameters
-        if param_body_percent <= 0.0 || param_shadow_equal_percent <= 0.0 {
+        if opt_body_percent <= 0.0 || opt_shadow_equal_percent <= 0.0 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -138,8 +138,8 @@ pub fn cdl_doji(
             input_high[i],
             input_low[i],
             input_close[i],
-            param_body_percent,
-            param_shadow_equal_percent,
+            opt_body_percent,
+            opt_shadow_equal_percent,
         )?;
     }
 
@@ -170,8 +170,8 @@ pub fn cdl_doji(
 /// * `input_high` - High price of the candlestick
 /// * `input_low` - Low price of the candlestick
 /// * `input_close` - Closing price of the candlestick
-/// * `param_body_percent` - Maximum body size as percentage of range
-/// * `param_shadow_equal_percent` - Maximum allowed difference between shadow lengths
+/// * `opt_body_percent` - Maximum body size as percentage of range
+/// * `opt_shadow_equal_percent` - Maximum allowed difference between shadow lengths
 ///
 /// # Returns
 /// * `Result<TAInt, KandError>` - Signal value (Pattern for Doji, Neutral for no pattern)
@@ -185,13 +185,13 @@ pub fn cdl_doji_inc(
     input_high: TAFloat,
     input_low: TAFloat,
     input_close: TAFloat,
-    param_body_percent: TAFloat,
-    param_shadow_equal_percent: TAFloat,
+    opt_body_percent: TAFloat,
+    opt_shadow_equal_percent: TAFloat,
 ) -> Result<TAInt, KandError> {
     #[cfg(feature = "check")]
     {
         // Check parameters
-        if param_body_percent <= 0.0 || param_shadow_equal_percent <= 0.0 {
+        if opt_body_percent <= 0.0 || opt_shadow_equal_percent <= 0.0 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -210,7 +210,7 @@ pub fn cdl_doji_inc(
     let dn_shadow = lower_shadow_length(input_low, input_open, input_close);
 
     // Check for Doji pattern
-    let is_doji_body = range > 0.0 && body <= range * param_body_percent / 100.0;
+    let is_doji_body = range > 0.0 && body <= range * opt_body_percent / 100.0;
 
     // Calculates the percentage difference between upper and lower shadows.
     // Returns the minimum relative difference to provide a more balanced comparison.
@@ -233,7 +233,7 @@ pub fn cdl_doji_inc(
         100.0
     };
 
-    let shadows_equal = shadow_diff_percent < param_shadow_equal_percent;
+    let shadows_equal = shadow_diff_percent < opt_shadow_equal_percent;
 
     Ok(if is_doji_body && shadows_equal {
         Signal::Pattern.into()
@@ -285,8 +285,8 @@ mod tests {
             96759.9, 97350.9, 97216.7, 97346.3, 97419.9, 97534.2, 97521.5, 97384.1,
         ];
 
-        let param_body_percent = 5.0;
-        let param_shadow_equal_percent = 100.0;
+        let opt_body_percent = 5.0;
+        let opt_shadow_equal_percent = 100.0;
         let mut output_signals = vec![0i64; input_open.len()];
 
         cdl_doji(
@@ -294,8 +294,8 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_body_percent,
-            param_shadow_equal_percent,
+            opt_body_percent,
+            opt_shadow_equal_percent,
             &mut output_signals,
         )
         .unwrap();
@@ -319,8 +319,8 @@ mod tests {
                 input_high[i],
                 input_low[i],
                 input_close[i],
-                param_body_percent,
-                param_shadow_equal_percent,
+                opt_body_percent,
+                opt_shadow_equal_percent,
             )
             .unwrap();
             assert_eq!(signal, output_signals[i], "Mismatch at index {i}");

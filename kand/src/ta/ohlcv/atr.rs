@@ -8,13 +8,13 @@ use crate::{KandError, TAFloat};
 /// can be calculated. For ATR, this equals the specified period.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for ATR calculation (must be >= 2)
+/// * `opt_period` - The time period used for ATR calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period on success
 ///
 /// # Errors
-/// * Returns `KandError::InvalidParameter` if `param_period` is less than 2
+/// * Returns `KandError::InvalidParameter` if `opt_period` is less than 2
 ///
 /// # Example
 /// ```
@@ -23,15 +23,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = atr::lookback(period).unwrap();
 /// assert_eq!(lookback, 14); // lookback equals period
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Average True Range (ATR) for an entire price series.
@@ -57,7 +57,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of close prices
-/// * `param_period` - The time period for ATR calculation (must be >= 2)
+/// * `opt_period` - The time period for ATR calculation (must be >= 2)
 /// * `output_atr` - Array to store calculated ATR values
 ///
 /// # Returns
@@ -66,7 +66,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input arrays have different lengths
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 /// * `KandError::InsufficientData` - If input length <= lookback period
 /// * `KandError::NaNDetected` - If any input value is NaN
 ///
@@ -77,14 +77,14 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// let input_high = vec![10.0, 12.0, 15.0, 14.0, 13.0];
 /// let input_low = vec![8.0, 9.0, 11.0, 10.0, 9.0];
 /// let input_close = vec![9.0, 11.0, 14.0, 12.0, 11.0];
-/// let param_period = 3;
+/// let opt_period = 3;
 /// let mut output_atr = vec![0.0; 5];
 ///
 /// atr::atr(
 ///     &input_high,
 ///     &input_low,
 ///     &input_close,
-///     param_period,
+///     opt_period,
 ///     &mut output_atr,
 /// )
 /// .unwrap();
@@ -93,11 +93,11 @@ pub fn atr(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_atr: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -136,13 +136,13 @@ pub fn atr(
         tr_sum += tr;
         prev_close = input_close[i];
     }
-    output_atr[lookback] = tr_sum / (param_period as TAFloat);
+    output_atr[lookback] = tr_sum / (opt_period as TAFloat);
 
     // Calculate remaining ATR values using RMA
     for i in (lookback + 1)..len {
         let tr = trange::trange_inc(input_high[i], input_low[i], input_close[i - 1])?;
-        output_atr[i] = output_atr[i - 1].mul_add((param_period - 1) as TAFloat, tr)
-            / (param_period as TAFloat);
+        output_atr[i] =
+            output_atr[i - 1].mul_add((opt_period - 1) as TAFloat, tr) / (opt_period as TAFloat);
     }
 
     // Fill initial values with NAN
@@ -170,13 +170,13 @@ pub fn atr(
 /// * `input_low` - Current period's low price
 /// * `prev_close` - Previous period's close price
 /// * `prev_atr` - Previous period's ATR value
-/// * `param_period` - The time period for ATR calculation (must be >= 2)
+/// * `opt_period` - The time period for ATR calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<TAFloat, KandError>` - The calculated ATR value on success
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 /// * `KandError::NaNDetected` - If any input value is NaN
 ///
 /// # Example
@@ -187,21 +187,21 @@ pub fn atr(
 /// let input_low = 11.0;
 /// let prev_close = 12.0;
 /// let prev_atr = 3.0;
-/// let param_period = 3;
+/// let opt_period = 3;
 ///
-/// let output_atr = atr_inc(input_high, input_low, prev_close, prev_atr, param_period).unwrap();
+/// let output_atr = atr_inc(input_high, input_low, prev_close, prev_atr, opt_period).unwrap();
 /// ```
 pub fn atr_inc(
     input_high: TAFloat,
     input_low: TAFloat,
     prev_close: TAFloat,
     prev_atr: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -215,7 +215,7 @@ pub fn atr_inc(
     }
 
     let tr = trange::trange_inc(input_high, input_low, prev_close)?;
-    Ok(prev_atr.mul_add((param_period - 1) as TAFloat, tr) / (param_period as TAFloat))
+    Ok(prev_atr.mul_add((opt_period - 1) as TAFloat, tr) / (opt_period as TAFloat))
 }
 
 #[cfg(test)]
@@ -242,14 +242,14 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_atr = vec![0.0; input_high.len()];
 
         atr(
             &input_high,
             &input_low,
             &input_close,
-            param_period,
+            opt_period,
             &mut output_atr,
         )
         .unwrap();
@@ -288,7 +288,7 @@ mod tests {
                 input_low[i],
                 input_close[i - 1],
                 prev_atr,
-                param_period,
+                opt_period,
             )
             .unwrap();
             assert_relative_eq!(result, output_atr[i], epsilon = 0.0001);

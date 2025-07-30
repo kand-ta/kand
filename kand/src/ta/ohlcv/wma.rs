@@ -7,7 +7,7 @@ use crate::{KandError, TAFloat};
 /// the first valid WMA value can be calculated. For WMA, this equals period - 1.
 ///
 /// # Arguments
-/// * `param_period` - The time period for WMA calculation (must be >= 2)
+/// * `opt_period` - The time period for WMA calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period on success
@@ -23,14 +23,14 @@ use crate::{KandError, TAFloat};
 /// let lookback = wma::lookback(period).unwrap();
 /// assert_eq!(lookback, 13); // lookback = period - 1
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates Weighted Moving Average (WMA) for a price series.
@@ -50,7 +50,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input` - Array of price values
-/// * `param_period` - The time period for WMA calculation (must be >= 2)
+/// * `opt_period` - The time period for WMA calculation (must be >= 2)
 /// * `output` - Array to store WMA values (first period-1 values are NaN)
 ///
 /// # Returns
@@ -74,13 +74,9 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// // output = [NaN, NaN, 2.0, 3.0, 4.0]
 /// // First value: (1.0*3 + 2.0*2 + 3.0*1)/(3+2+1) = 2.0
 /// ```
-pub fn wma(
-    input: &[TAFloat],
-    param_period: usize,
-    output: &mut [TAFloat],
-) -> Result<(), KandError> {
+pub fn wma(input: &[TAFloat], opt_period: usize, output: &mut [TAFloat]) -> Result<(), KandError> {
     let len = input.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -105,7 +101,7 @@ pub fn wma(
     }
 
     // Calculate denominator (sum of weights)
-    let denominator = (param_period * (param_period + 1)) as TAFloat / 2.0;
+    let denominator = (opt_period * (opt_period + 1)) as TAFloat / 2.0;
 
     // Fill initial values with NAN
     for value in output.iter_mut().take(lookback) {
@@ -115,9 +111,9 @@ pub fn wma(
     // Calculate WMA for each window
     for i in lookback..len {
         let mut weighted_sum = 0.0;
-        let mut weight = param_period as TAFloat;
+        let mut weight = opt_period as TAFloat;
 
-        for j in 0..param_period {
+        for j in 0..opt_period {
             weighted_sum += input[i - j] * weight;
             weight -= 1.0;
         }
@@ -145,7 +141,7 @@ pub fn wma(
 ///
 /// # Arguments
 /// * `input_window` - Price values ordered from newest to oldest
-/// * `param_period` - The time period for WMA calculation (must be >= 2)
+/// * `opt_period` - The time period for WMA calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<TAFloat, KandError>` - The calculated WMA value
@@ -163,13 +159,13 @@ pub fn wma(
 /// let wma = wma::wma_inc(&window, 3).unwrap();
 /// // wma = (5.0*3 + 4.0*2 + 3.0*1)/(3+2+1) = 4.333...
 /// ```
-pub fn wma_inc(input_window: &[TAFloat], param_period: usize) -> Result<TAFloat, KandError> {
+pub fn wma_inc(input_window: &[TAFloat], opt_period: usize) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
-        if input_window.len() != param_period {
+        if input_window.len() != opt_period {
             return Err(KandError::LengthMismatch);
         }
     }
@@ -183,9 +179,9 @@ pub fn wma_inc(input_window: &[TAFloat], param_period: usize) -> Result<TAFloat,
         }
     }
 
-    let denominator = (param_period * (param_period + 1)) as TAFloat / 2.0;
+    let denominator = (opt_period * (opt_period + 1)) as TAFloat / 2.0;
     let mut weighted_sum = 0.0;
-    let mut weight = param_period as TAFloat;
+    let mut weight = opt_period as TAFloat;
 
     for &value in input_window {
         weighted_sum += value * weight;
@@ -211,10 +207,10 @@ mod tests {
             35154.0, 35216.3, 35211.8, 35158.4,
         ];
 
-        let param_period = 30;
+        let opt_period = 30;
         let mut output = vec![0.0; input.len()];
 
-        wma(&input, param_period, &mut output).unwrap();
+        wma(&input, opt_period, &mut output).unwrap();
 
         // First 29 values should be NaN
         for value in output.iter().take(29) {
@@ -242,12 +238,12 @@ mod tests {
 
         // Test incremental calculation matches regular calculation
         for i in 30..35 {
-            let window: Vec<TAFloat> = input[i - (param_period - 1)..=i]
+            let window: Vec<TAFloat> = input[i - (opt_period - 1)..=i]
                 .iter()
                 .rev()
                 .copied()
                 .collect();
-            let result = wma_inc(&window, param_period).unwrap();
+            let result = wma_inc(&window, opt_period).unwrap();
             assert_relative_eq!(result, output[i], epsilon = 0.0001);
         }
     }

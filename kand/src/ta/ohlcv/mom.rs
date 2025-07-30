@@ -7,13 +7,13 @@ use crate::{KandError, TAFloat};
 /// For momentum calculation, this equals the momentum period parameter.
 ///
 /// # Arguments
-/// * `param_period` - The number of periods to look back for momentum calculation (must be >= 2)
+/// * `opt_period` - The number of periods to look back for momentum calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period on success, or error on failure
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2 (when "check" feature is enabled)
+/// * `KandError::InvalidParameter` - If `opt_period` < 2 (when "check" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -23,14 +23,14 @@ use crate::{KandError, TAFloat};
 /// let lookback = mom::lookback(period).unwrap();
 /// assert_eq!(lookback, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Momentum (MOM) for an array of prices
@@ -55,7 +55,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_prices` - Array of input price values
-/// * `param_period` - Number of periods to look back (n)
+/// * `opt_period` - Number of periods to look back (n)
 /// * `output_mom` - Array to store calculated momentum values
 ///
 /// # Returns
@@ -64,7 +64,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input array is empty
 /// * `KandError::LengthMismatch` - If output array length != input array length
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::InsufficientData` - If input length < lookback period
 /// * `KandError::NaNDetected` - If any input price is NaN (when "`check-nan`" feature is enabled)
 ///
@@ -81,11 +81,11 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn mom(
     input_prices: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_mom: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_prices.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -117,7 +117,7 @@ pub fn mom(
 
     // Calculate momentum
     for i in lookback..len {
-        output_mom[i] = input_prices[i] - input_prices[i - param_period];
+        output_mom[i] = input_prices[i] - input_prices[i - opt_period];
     }
 
     // Fill initial values with NAN
@@ -181,10 +181,10 @@ mod tests {
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0, 35114.5, 35097.2,
             35092.0, 35073.2, 35139.3,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_mom = vec![0.0; input_prices.len()];
 
-        mom(&input_prices, param_period, &mut output_mom).unwrap();
+        mom(&input_prices, opt_period, &mut output_mom).unwrap();
 
         // First 14 values should be NaN
         for value in output_mom.iter().take(14) {
@@ -202,8 +202,8 @@ mod tests {
         }
 
         // Test incremental calculation
-        for i in param_period..input_prices.len() {
-            let result = mom_inc(input_prices[i], input_prices[i - param_period]).unwrap();
+        for i in opt_period..input_prices.len() {
+            let result = mom_inc(input_prices[i], input_prices[i - opt_period]).unwrap();
             assert_relative_eq!(result, output_mom[i], epsilon = 0.00001);
         }
     }

@@ -3,22 +3,22 @@ use crate::{TAFloat, error::KandError};
 /// Calculates the lookback period required for T3 indicator
 ///
 /// # Arguments
-/// * `param_period` - Smoothing period (must be >= 2)
+/// * `opt_period` - Smoothing period (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - Lookback period if successful
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(6 * (param_period - 1))
+    Ok(6 * (opt_period - 1))
 }
 
 /// Calculates T3 (Triple Exponential Moving Average) indicator for a price series
@@ -49,8 +49,8 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input` - Price data array
-/// * `param_period` - Smoothing period for EMAs (must be >= 2)
-/// * `param_vfactor` - Volume factor controlling smoothing (typically 0-1)
+/// * `opt_period` - Smoothing period for EMAs (must be >= 2)
+/// * `opt_vfactor` - Volume factor controlling smoothing (typically 0-1)
 /// * `output` - Array to store T3 values
 /// * `output_ema1` - Array to store EMA1 values
 /// * `output_ema2` - Array to store EMA2 values
@@ -65,7 +65,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input array is empty
 /// * `KandError::LengthMismatch` - If input/output array lengths don't match
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::InsufficientData` - If input length <= lookback period
 /// * `KandError::NaNDetected` - If NaN values found in input
 ///
@@ -98,8 +98,8 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn t3(
     input: &[TAFloat],
-    param_period: usize,
-    param_vfactor: TAFloat,
+    opt_period: usize,
+    opt_vfactor: TAFloat,
     output: &mut [TAFloat],
     output_ema1: &mut [TAFloat],
     output_ema2: &mut [TAFloat],
@@ -109,7 +109,7 @@ pub fn t3(
     output_ema6: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -136,7 +136,7 @@ pub fn t3(
         }
 
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -150,7 +150,7 @@ pub fn t3(
         }
     }
 
-    let a = param_vfactor as TAFloat;
+    let a = opt_vfactor as TAFloat;
     let a2 = a * a;
     let a3 = a2 * a;
 
@@ -160,54 +160,54 @@ pub fn t3(
     let c3 = 3.0f64.mul_add(-a3, (-6.0f64).mul_add(a2, -(3.0 * a)));
     let c4 = 3.0f64.mul_add(a2, 3.0f64.mul_add(a, 1.0) + a3);
 
-    let k = crate::helper::period_to_k(param_period)?;
+    let k = crate::helper::period_to_k(opt_period)?;
     let one_minus_k = 1.0 - k;
 
     // Sequential initialization mimicking TA-Lib's warm-up process.
     // "today" will serve as our pointer into the input array.
     let mut today = 0;
 
-    // Initialize EMA1 with a simple moving average (SMA) of the first 'param_period' values.
+    // Initialize EMA1 with a simple moving average (SMA) of the first 'opt_period' values.
     let mut temp = 0.0;
-    for _ in 0..param_period {
+    for _ in 0..opt_period {
         temp += input[today];
         today += 1;
     }
-    let mut e1 = temp / (param_period as TAFloat);
+    let mut e1 = temp / (opt_period as TAFloat);
 
-    // Initialize EMA2 using the next (param_period - 1) values.
+    // Initialize EMA2 using the next (opt_period - 1) values.
     temp = e1;
-    for _ in 1..param_period {
+    for _ in 1..opt_period {
         e1 = k.mul_add(input[today], one_minus_k * e1);
         temp += e1;
         today += 1;
     }
-    let mut e2 = temp / (param_period as TAFloat);
+    let mut e2 = temp / (opt_period as TAFloat);
 
     // Initialize EMA3.
     temp = e2;
-    for _ in 1..param_period {
+    for _ in 1..opt_period {
         e1 = k.mul_add(input[today], one_minus_k * e1);
         e2 = k.mul_add(e1, one_minus_k * e2);
         temp += e2;
         today += 1;
     }
-    let mut e3 = temp / (param_period as TAFloat);
+    let mut e3 = temp / (opt_period as TAFloat);
 
     // Initialize EMA4.
     temp = e3;
-    for _ in 1..param_period {
+    for _ in 1..opt_period {
         e1 = k.mul_add(input[today], one_minus_k * e1);
         e2 = k.mul_add(e1, one_minus_k * e2);
         e3 = k.mul_add(e2, one_minus_k * e3);
         temp += e3;
         today += 1;
     }
-    let mut e4 = temp / (param_period as TAFloat);
+    let mut e4 = temp / (opt_period as TAFloat);
 
     // Initialize EMA5.
     temp = e4;
-    for _ in 1..param_period {
+    for _ in 1..opt_period {
         e1 = k.mul_add(input[today], one_minus_k * e1);
         e2 = k.mul_add(e1, one_minus_k * e2);
         e3 = k.mul_add(e2, one_minus_k * e3);
@@ -215,11 +215,11 @@ pub fn t3(
         temp += e4;
         today += 1;
     }
-    let mut e5 = temp / (param_period as TAFloat);
+    let mut e5 = temp / (opt_period as TAFloat);
 
     // Initialize EMA6.
     temp = e5;
-    for _ in 1..param_period {
+    for _ in 1..opt_period {
         e1 = k.mul_add(input[today], one_minus_k * e1);
         e2 = k.mul_add(e1, one_minus_k * e2);
         e3 = k.mul_add(e2, one_minus_k * e3);
@@ -228,7 +228,7 @@ pub fn t3(
         temp += e5;
         today += 1;
     }
-    let mut e6 = temp / (param_period as TAFloat);
+    let mut e6 = temp / (opt_period as TAFloat);
 
     // Skip the remainder of the unstable period (if any).
     while today <= lookback {
@@ -297,8 +297,8 @@ pub fn t3(
 /// * `prev_ema4` - Previous EMA4 value
 /// * `prev_ema5` - Previous EMA5 value
 /// * `prev_ema6` - Previous EMA6 value
-/// * `param_period` - Smoothing period for EMAs (must be >= 2)
-/// * `param_vfactor` - Volume factor (typically 0-1)
+/// * `opt_period` - Smoothing period for EMAs (must be >= 2)
+/// * `opt_vfactor` - Volume factor (typically 0-1)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat, TAFloat, TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing:
@@ -311,7 +311,7 @@ pub fn t3(
 ///   - Updated EMA6 value
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::NaNDetected` - If any input value is NaN
 ///
 /// # Example
@@ -340,8 +340,8 @@ pub fn t3_inc(
     prev_ema4: TAFloat,
     prev_ema5: TAFloat,
     prev_ema6: TAFloat,
-    param_period: usize,
-    param_vfactor: TAFloat,
+    opt_period: usize,
+    opt_vfactor: TAFloat,
 ) -> Result<
     (
         TAFloat,
@@ -356,7 +356,7 @@ pub fn t3_inc(
 > {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -375,7 +375,7 @@ pub fn t3_inc(
         }
     }
 
-    let k = crate::helper::period_to_k(param_period)?;
+    let k = crate::helper::period_to_k(opt_period)?;
     let one_minus_k = 1.0 - k;
 
     // Calculate new EMA values
@@ -387,7 +387,7 @@ pub fn t3_inc(
     let ema6 = ema5.mul_add(k, prev_ema6 * one_minus_k);
 
     // Calculate coefficients
-    let a = param_vfactor as TAFloat;
+    let a = opt_vfactor as TAFloat;
     let a2 = a * a;
     let a3 = a2 * a;
 
@@ -417,8 +417,8 @@ mod tests {
             35092.0, 35073.2, 35139.3, 35092.0, 35126.7, 35106.3, 35124.8, 35170.1,
         ];
 
-        let param_period = 5;
-        let param_vfactor = 0.7;
+        let opt_period = 5;
+        let opt_vfactor = 0.7;
         let mut output = vec![0.0; input.len()];
         let mut output_ema1 = vec![0.0; input.len()];
         let mut output_ema2 = vec![0.0; input.len()];
@@ -430,8 +430,8 @@ mod tests {
         // Calculate T3 for the full series
         t3(
             &input,
-            param_period,
-            param_vfactor,
+            opt_period,
+            opt_vfactor,
             &mut output,
             &mut output_ema1,
             &mut output_ema2,
@@ -484,8 +484,8 @@ mod tests {
                 prev_ema4,
                 prev_ema5,
                 prev_ema6,
-                param_period,
-                param_vfactor,
+                opt_period,
+                opt_vfactor,
             )
             .unwrap();
 

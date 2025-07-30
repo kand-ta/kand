@@ -4,7 +4,7 @@ use crate::{KandError, TAFloat};
 /// Returns the lookback period needed for +DI calculation
 ///
 /// # Arguments
-/// * `param_period` - The period parameter for +DI calculation. Must be >= 2.
+/// * `opt_period` - The period parameter for +DI calculation. Must be >= 2.
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The number of data points needed before first valid output
@@ -19,15 +19,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = plus_di::lookback(period).unwrap();
 /// assert_eq!(lookback, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Plus Directional Indicator (+DI) values for the entire input array
@@ -64,7 +64,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - Smoothing period (>= 2)
+/// * `opt_period` - Smoothing period (>= 2)
 /// * `output_plus_di` - Output array for +DI values
 /// * `output_smoothed_plus_dm` - Output array for smoothed +DM values
 /// * `output_smoothed_tr` - Output array for smoothed TR values
@@ -106,13 +106,13 @@ pub fn plus_di(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_plus_di: &mut [TAFloat],
     output_smoothed_plus_dm: &mut [TAFloat],
     output_smoothed_tr: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -155,7 +155,7 @@ pub fn plus_di(
     let mut prev_close = input_close[0];
 
     // Calculate first period-1 +DM1 and TR1 values
-    for i in 1..param_period {
+    for i in 1..opt_period {
         let high_diff = input_high[i] - prev_high;
         let low_diff = prev_low - input_low[i];
 
@@ -177,14 +177,14 @@ pub fn plus_di(
 
     // Calculate first +DI value
     let hundred = 100.0;
-    let period_t = param_period as TAFloat;
+    let period_t = opt_period as TAFloat;
 
     // Initialize smoothed values
     let mut curr_smoothed_plus_dm = plus_dm_sum;
     let mut curr_smoothed_tr = tr_sum;
 
     // Calculate remaining +DI values using Wilder's smoothing
-    for i in param_period..len {
+    for i in opt_period..len {
         let high_diff = input_high[i] - input_high[i - 1];
         let low_diff = input_low[i - 1] - input_low[i];
 
@@ -253,7 +253,7 @@ pub fn plus_di(
 /// * `prev_close` - Previous close price
 /// * `prev_smoothed_plus_dm` - Previous smoothed +DM value
 /// * `prev_smoothed_tr` - Previous smoothed TR value
-/// * `param_period` - Smoothing period (>= 2)
+/// * `opt_period` - Smoothing period (>= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat), KandError>` - Tuple of (latest +DI, new smoothed +DM, new smoothed TR)
@@ -286,12 +286,12 @@ pub fn plus_di_inc(
     prev_close: TAFloat,
     prev_smoothed_plus_dm: TAFloat,
     prev_smoothed_tr: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -321,7 +321,7 @@ pub fn plus_di_inc(
     };
 
     let tr = trange::trange_inc(input_high, input_low, prev_close)?;
-    let period_t = param_period as TAFloat;
+    let period_t = opt_period as TAFloat;
 
     let output_smoothed_plus_dm =
         prev_smoothed_plus_dm - (prev_smoothed_plus_dm / period_t) + plus_dm;
@@ -361,7 +361,7 @@ mod tests {
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
 
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_plus_di = vec![0.0; input_high.len()];
         let mut output_smoothed_plus_dm = vec![0.0; input_high.len()];
         let mut output_smoothed_tr = vec![0.0; input_high.len()];
@@ -370,7 +370,7 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
+            opt_period,
             &mut output_plus_di,
             &mut output_smoothed_plus_dm,
             &mut output_smoothed_tr,
@@ -410,7 +410,7 @@ mod tests {
                 input_close[i - 1],
                 prev_smoothed_plus_dm,
                 prev_smoothed_tr,
-                param_period,
+                opt_period,
             )
             .unwrap();
             assert_relative_eq!(plus_di, output_plus_di[i], epsilon = 0.00001);

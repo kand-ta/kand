@@ -11,13 +11,13 @@ use crate::{
 /// can be calculated. For the Aroon Oscillator, this equals the specified period parameter.
 ///
 /// # Arguments
-/// * `param_period` - The time period for Aroon calculation (must be >= 2)
+/// * `opt_period` - The time period for Aroon calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period on success
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2 (when "check" feature enabled)
+/// * `KandError::InvalidParameter` - If `opt_period` < 2 (when "check" feature enabled)
 ///
 /// # Example
 /// ```
@@ -26,14 +26,14 @@ use crate::{
 /// let lookback_period = lookback(period).unwrap();
 /// assert_eq!(lookback_period, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Aroon Oscillator values for an entire price series.
@@ -58,7 +58,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Arguments
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
-/// * `param_period` - The time period for Aroon calculation (must be >= 2)
+/// * `opt_period` - The time period for Aroon calculation (must be >= 2)
 /// * `output_aroonosc` - Array to store the calculated Aroon Oscillator values
 /// * `output_prev_high` - Array to store highest prices within the period
 /// * `output_prev_low` - Array to store lowest prices within the period
@@ -71,7 +71,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::InsufficientData` - If input length <= lookback period
 /// * `KandError::NaNDetected` - If any input contains NaN (when "`check-nan`" enabled)
 ///
@@ -103,7 +103,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 pub fn aroonosc(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_aroonosc: &mut [TAFloat],
     output_prev_high: &mut [TAFloat],
     output_prev_low: &mut [TAFloat],
@@ -111,7 +111,7 @@ pub fn aroonosc(
     output_days_since_low: &mut [usize],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -146,12 +146,12 @@ pub fn aroonosc(
         }
     }
 
-    let param_period_t = param_period as TAFloat;
+    let opt_period_t = opt_period as TAFloat;
     let hundred_t = 100.0;
 
     for i in lookback..len {
-        let days_since_high = highest_bars(input_high, i, param_period + 1)?;
-        let days_since_low = lowest_bars(input_low, i, param_period + 1)?;
+        let days_since_high = highest_bars(input_high, i, opt_period + 1)?;
+        let days_since_low = lowest_bars(input_low, i, opt_period + 1)?;
 
         output_days_since_high[i] = days_since_high;
         output_days_since_low[i] = days_since_low;
@@ -163,8 +163,8 @@ pub fn aroonosc(
         let days_since_high_t = days_since_high as TAFloat;
         let days_since_low_t = days_since_low as TAFloat;
 
-        let aroon_up = hundred_t - (hundred_t * days_since_high_t / param_period_t);
-        let aroon_down = hundred_t - (hundred_t * days_since_low_t / param_period_t);
+        let aroon_up = hundred_t - (hundred_t * days_since_high_t / opt_period_t);
+        let aroon_down = hundred_t - (hundred_t * days_since_low_t / opt_period_t);
 
         output_aroonosc[i] = aroon_up - aroon_down;
     }
@@ -206,7 +206,7 @@ pub fn aroonosc(
 /// * `prev_low` - Previous lowest price within the period
 /// * `input_days_since_high` - Days since previous highest price
 /// * `input_days_since_low` - Days since previous lowest price
-/// * `param_period` - The time period for Aroon calculation (must be >= 2)
+/// * `opt_period` - The time period for Aroon calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat, usize, usize), KandError>` - Returns tuple containing:
@@ -217,7 +217,7 @@ pub fn aroonosc(
 ///   - Updated days since lowest price
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2 (when "check" enabled)
+/// * `KandError::InvalidParameter` - If `opt_period` < 2 (when "check" enabled)
 /// * `KandError::NaNDetected` - If any input is NaN (when "`check-nan`" enabled)
 ///
 /// # Example
@@ -242,11 +242,11 @@ pub fn aroonosc_inc(
     prev_low: TAFloat,
     input_days_since_high: usize,
     input_days_since_low: usize,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat, usize, usize), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -263,10 +263,10 @@ pub fn aroonosc_inc(
     let mut days_since_high = input_days_since_high;
     let mut days_since_low = input_days_since_low;
 
-    if days_since_high < param_period {
+    if days_since_high < opt_period {
         days_since_high += 1;
     }
-    if days_since_low < param_period {
+    if days_since_low < opt_period {
         days_since_low += 1;
     }
 
@@ -279,13 +279,13 @@ pub fn aroonosc_inc(
         days_since_low = 0;
     }
 
-    let param_period_t = param_period as TAFloat;
+    let opt_period_t = opt_period as TAFloat;
     let hundred_t = 100.0;
     let days_since_high_t = days_since_high as TAFloat;
     let days_since_low_t = days_since_low as TAFloat;
 
-    let aroon_up = hundred_t - (hundred_t * days_since_high_t / param_period_t);
-    let aroon_down = hundred_t - (hundred_t * days_since_low_t / param_period_t);
+    let aroon_up = hundred_t - (hundred_t * days_since_high_t / opt_period_t);
+    let aroon_down = hundred_t - (hundred_t * days_since_low_t / opt_period_t);
     let aroon_osc = aroon_up - aroon_down;
 
     Ok((
@@ -315,7 +315,7 @@ mod tests {
             35166.0, 35170.9, 35154.1, 35186.0, 35143.9, 35080.1, 35021.1, 34950.1, 34966.0,
             35012.3, 35022.2, 34931.6, 34911.0, 34952.5, 34977.9, 35039.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_aroonosc = vec![0.0; input_high.len()];
         let mut output_prev_high = vec![0.0; input_high.len()];
         let mut output_prev_low = vec![0.0; input_high.len()];
@@ -325,7 +325,7 @@ mod tests {
         aroonosc(
             &input_high,
             &input_low,
-            param_period,
+            opt_period,
             &mut output_aroonosc,
             &mut output_prev_high,
             &mut output_prev_low,
@@ -372,7 +372,7 @@ mod tests {
                 prev_low,
                 days_since_high,
                 days_since_low,
-                param_period,
+                opt_period,
             )
             .unwrap();
 

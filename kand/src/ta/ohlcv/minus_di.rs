@@ -4,13 +4,13 @@ use crate::{KandError, TAFloat};
 /// Calculates the lookback period required for -DI (Minus Directional Indicator) calculation.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for calculation (must be >= 2)
+/// * `opt_period` - The time period used for calculation (must be >= 2)
 ///
 /// # Returns
-/// * `Result<usize, KandError>` - Returns `param_period` on success
+/// * `Result<usize, KandError>` - Returns `opt_period` on success
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Example
 /// ```
@@ -18,15 +18,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = minus_di::lookback(14).unwrap();
 /// assert_eq!(lookback, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates the Minus Directional Indicator (-DI) for the entire input array.
@@ -59,13 +59,13 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// 2. Uses Wilder's smoothing for more weight on recent data
 /// 3. Higher values indicate stronger downward trends
 /// 4. Part of the complete Directional Movement System
-/// 5. First valid value appears after `param_period` bars
+/// 5. First valid value appears after `opt_period` bars
 ///
 /// # Arguments
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - Calculation period (>= 2)
+/// * `opt_period` - Calculation period (>= 2)
 /// * `output_minus_di` - Output array for -DI values
 /// * `output_smoothed_minus_dm` - Output array for smoothed -DM values
 /// * `output_smoothed_tr` - Output array for smoothed TR values
@@ -74,10 +74,10 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `Result<(), KandError>` - Ok on success, Err otherwise
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
-/// * `KandError::InsufficientData` - If input length <= `param_period`
+/// * `KandError::InsufficientData` - If input length <= `opt_period`
 /// * `KandError::NaNDetected` - If any input contains NaN
 ///
 /// # Example
@@ -108,13 +108,13 @@ pub fn minus_di(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_minus_di: &mut [TAFloat],
     output_smoothed_minus_dm: &mut [TAFloat],
     output_smoothed_tr: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -157,7 +157,7 @@ pub fn minus_di(
     let mut prev_close = input_close[0];
 
     // Calculate first period-1 -DM1 and TR1 values
-    for i in 1..param_period {
+    for i in 1..opt_period {
         let high_diff = input_high[i] - prev_high;
         let low_diff = prev_low - input_low[i];
 
@@ -179,7 +179,7 @@ pub fn minus_di(
 
     // Calculate first -DI value
     let hundred = 100.0;
-    let period_t = param_period as TAFloat;
+    let period_t = opt_period as TAFloat;
 
     // Initialize smoothed values
     let mut curr_smoothed_minus_dm = minus_dm_sum;
@@ -255,13 +255,13 @@ pub fn minus_di(
 /// * `prev_close` - Previous close price
 /// * `prev_smoothed_minus_dm` - Previous smoothed -DM
 /// * `prev_smoothed_tr` - Previous smoothed TR
-/// * `param_period` - Calculation period (>= 2)
+/// * `opt_period` - Calculation period (>= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat), KandError>` - Tuple of (new -DI, new smoothed -DM, new smoothed TR)
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::NaNDetected` - If any input contains NaN
 ///
 /// # Example
@@ -288,7 +288,7 @@ pub fn minus_di_inc(
     prev_close: TAFloat,
     prev_smoothed_minus_dm: TAFloat,
     prev_smoothed_tr: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
@@ -296,7 +296,7 @@ pub fn minus_di_inc(
         // -DI requires at least 2 periods:
         // - One for initial DM and TR calculations (needs previous prices)
         // - One for the current period
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -326,7 +326,7 @@ pub fn minus_di_inc(
     };
 
     let tr = trange::trange_inc(input_high, input_low, prev_close)?;
-    let period_t = param_period as TAFloat;
+    let period_t = opt_period as TAFloat;
 
     let output_smoothed_minus_dm =
         prev_smoothed_minus_dm - (prev_smoothed_minus_dm / period_t) + minus_dm;
@@ -369,7 +369,7 @@ mod tests {
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
 
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_minus_di = vec![0.0; input_high.len()];
         let mut output_smoothed_minus_dm = vec![0.0; input_high.len()];
         let mut output_smoothed_tr = vec![0.0; input_high.len()];
@@ -378,15 +378,15 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
+            opt_period,
             &mut output_minus_di,
             &mut output_smoothed_minus_dm,
             &mut output_smoothed_tr,
         )
         .unwrap();
 
-        // First param_period values should be NaN
-        for value in output_minus_di.iter().take(param_period) {
+        // First opt_period values should be NaN
+        for value in output_minus_di.iter().take(opt_period) {
             assert!(value.is_nan());
         }
 
@@ -431,7 +431,7 @@ mod tests {
                 input_close[i - 1],
                 prev_smoothed_minus_dm,
                 prev_smoothed_tr,
-                param_period,
+                opt_period,
             )
             .unwrap();
 

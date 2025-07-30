@@ -28,7 +28,7 @@ name = "bench_main"
 harness = false
 
 [features]
-default = ["f64", "i64"]     # Default: extended precision with basic checks
+default = ["f64", "i64", "check"]     # Default: extended precision with basic checks
 f32 = []                              # 32-bit floating point
 f64 = []                              # 64-bit floating point
 i32 = []                              # 32-bit integer

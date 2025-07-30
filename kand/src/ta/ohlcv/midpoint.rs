@@ -7,13 +7,13 @@ use crate::{KandError, TAFloat};
 /// For the Midpoint indicator, this equals `period - 1`.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for calculation (must be >= 2)
+/// * `opt_period` - The time period used for calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period (period - 1) on success
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Examples
 /// ```
@@ -23,15 +23,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = midpoint::lookback(period).unwrap();
 /// assert_eq!(lookback, 13);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates Midpoint values for a price series.
@@ -57,7 +57,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_price` - Array of price values
-/// * `param_period` - Time period for calculation (must be >= 2)
+/// * `opt_period` - Time period for calculation (must be >= 2)
 /// * `output_midpoint` - Array to store calculated Midpoint values
 /// * `output_highest` - Array to store highest values for each period
 /// * `output_lowest` - Array to store lowest values for each period
@@ -68,7 +68,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input array is empty
 /// * `KandError::LengthMismatch` - If input/output array lengths don't match
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 /// * `KandError::InsufficientData` - If input length is less than lookback period
 /// * `KandError::NaNDetected` - If any input value is NaN (when `check-nan` enabled)
 ///
@@ -77,14 +77,14 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// use kand::ohlcv::midpoint;
 ///
 /// let input_price = vec![10.0, 12.0, 15.0, 14.0, 13.0];
-/// let param_period = 3;
+/// let opt_period = 3;
 /// let mut output_midpoint = vec![0.0; 5];
 /// let mut output_highest = vec![0.0; 5];
 /// let mut output_lowest = vec![0.0; 5];
 ///
 /// midpoint::midpoint(
 ///     &input_price,
-///     param_period,
+///     opt_period,
 ///     &mut output_midpoint,
 ///     &mut output_highest,
 ///     &mut output_lowest,
@@ -93,13 +93,13 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn midpoint(
     input_price: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_midpoint: &mut [TAFloat],
     output_highest: &mut [TAFloat],
     output_lowest: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_price.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -131,7 +131,7 @@ pub fn midpoint(
 
     // Calculate midpoint for each window
     for i in lookback..len {
-        let start_idx = i + 1 - param_period;
+        let start_idx = i + 1 - opt_period;
         let mut highest = input_price[start_idx];
         let mut lowest = input_price[start_idx];
 
@@ -179,13 +179,13 @@ pub fn midpoint(
 /// * `input_price` - Current price value
 /// * `prev_highest` - Previous highest value
 /// * `prev_lowest` - Previous lowest value
-/// * `param_period` - Time period for calculation (must be >= 2)
+/// * `opt_period` - Time period for calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat), KandError>` - Tuple (midpoint, `new_highest`, `new_lowest`) on success
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 /// * `KandError::NaNDetected` - If any input value is NaN (when `check-nan` enabled)
 ///
 /// # Examples
@@ -204,11 +204,11 @@ pub const fn midpoint_inc(
     input_price: TAFloat,
     prev_highest: TAFloat,
     prev_lowest: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -240,14 +240,14 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_midpoint = vec![0.0; input_price.len()];
         let mut output_highest = vec![0.0; input_price.len()];
         let mut output_lowest = vec![0.0; input_price.len()];
 
         midpoint(
             &input_price,
-            param_period,
+            opt_period,
             &mut output_midpoint,
             &mut output_highest,
             &mut output_lowest,
@@ -277,7 +277,7 @@ mod tests {
 
         for i in 14..19 {
             let (midpoint, new_highest, new_lowest) =
-                midpoint_inc(input_price[i], prev_highest, prev_lowest, param_period).unwrap();
+                midpoint_inc(input_price[i], prev_highest, prev_lowest, opt_period).unwrap();
 
             assert_relative_eq!(midpoint, output_midpoint[i], epsilon = 0.01);
             prev_highest = new_highest;

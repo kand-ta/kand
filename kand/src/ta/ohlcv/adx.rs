@@ -6,13 +6,13 @@ use crate::{KandError, TAFloat};
 /// Returns the number of data points needed before the first valid ADX value can be calculated.
 ///
 /// # Arguments
-/// * `param_period` - The period parameter used for ADX calculation (typically 14)
+/// * `opt_period` - The period parameter used for ADX calculation (typically 14)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period if successful, or error if invalid parameters
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Example
 /// ```
@@ -22,15 +22,15 @@ use crate::{KandError, TAFloat};
 /// let lookback_period = lookback(period).unwrap();
 /// assert_eq!(lookback_period, 27); // 2 * period - 1
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period * 2 - 1)
+    Ok(opt_period * 2 - 1)
 }
 
 /// Calculate Average Directional Index (ADX) for the entire input array
@@ -65,7 +65,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - The period parameter (typically 14)
+/// * `opt_period` - The period parameter (typically 14)
 /// * `output_adx` - Output array for ADX values
 /// * `output_smoothed_plus_dm` - Output array for smoothed +DM values
 /// * `output_smoothed_minus_dm` - Output array for smoothed -DM values
@@ -77,7 +77,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::InsufficientData` - If input length <= lookback period
 /// * `KandError::NaNDetected` - If any input contains NaN values
 ///
@@ -111,14 +111,14 @@ pub fn adx(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_adx: &mut [TAFloat],
     output_smoothed_plus_dm: &mut [TAFloat],
     output_smoothed_minus_dm: &mut [TAFloat],
     output_smoothed_tr: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -161,7 +161,7 @@ pub fn adx(
         input_high,
         input_low,
         input_close,
-        param_period,
+        opt_period,
         &mut dx_values,
         output_smoothed_plus_dm,
         output_smoothed_minus_dm,
@@ -173,20 +173,20 @@ pub fn adx(
     for value in dx_values
         .iter()
         .take(lookback + 1)
-        .skip(lookback + 1 - param_period)
+        .skip(lookback + 1 - opt_period)
     {
         sum += *value;
     }
-    output_adx[lookback] = sum / param_period as TAFloat;
+    output_adx[lookback] = sum / opt_period as TAFloat;
 
     // Calculate remaining ADX values using Wilder's smoothing
-    let period_t = param_period as TAFloat;
+    let period_t = opt_period as TAFloat;
     for i in (lookback + 1)..len {
         output_adx[i] = output_adx[i - 1].mul_add(period_t - 1.0, dx_values[i]) / period_t;
     }
 
     // Fill initial values with NAN
-    for item in output_adx.iter_mut().take(param_period * 2 - 1) {
+    for item in output_adx.iter_mut().take(opt_period * 2 - 1) {
         *item = TAFloat::NAN;
     }
 
@@ -208,7 +208,7 @@ pub fn adx(
 /// * `prev_smoothed_plus_dm` - Previous period's smoothed +DM
 /// * `prev_smoothed_minus_dm` - Previous period's smoothed -DM
 /// * `prev_smoothed_tr` - Previous period's smoothed TR
-/// * `param_period` - The period parameter (typically 14)
+/// * `opt_period` - The period parameter (typically 14)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing:
@@ -218,7 +218,7 @@ pub fn adx(
 ///   - New smoothed TR
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::NaNDetected` - If any input contains NaN values
 ///
 /// # Example
@@ -249,12 +249,12 @@ pub fn adx_inc(
     prev_smoothed_plus_dm: TAFloat,
     prev_smoothed_minus_dm: TAFloat,
     prev_smoothed_tr: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -285,10 +285,10 @@ pub fn adx_inc(
         prev_smoothed_plus_dm,
         prev_smoothed_minus_dm,
         prev_smoothed_tr,
-        param_period,
+        opt_period,
     )?;
 
-    let period_t = param_period as TAFloat;
+    let period_t = opt_period as TAFloat;
     let output_adx = prev_adx.mul_add(period_t - 1.0, dx) / period_t;
 
     Ok((
@@ -332,7 +332,7 @@ mod tests {
             35154.0, 35216.3, 35211.8, 35158.4, 35172.0, 35176.7, 35113.3, 35114.7, 35129.3,
             35094.6, 35114.4, 35094.5, 35116.0, 35105.4,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_adx = vec![0.0; input_high.len()];
         let mut output_smoothed_plus_dm = vec![0.0; input_high.len()];
         let mut output_smoothed_minus_dm = vec![0.0; input_high.len()];
@@ -342,7 +342,7 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
+            opt_period,
             &mut output_adx,
             &mut output_smoothed_plus_dm,
             &mut output_smoothed_minus_dm,
@@ -351,7 +351,7 @@ mod tests {
         .unwrap();
 
         // First (2*period-1) values should be NaN
-        for value in output_adx.iter().take(2 * param_period - 1) {
+        for value in output_adx.iter().take(2 * opt_period - 1) {
             assert!(value.is_nan());
         }
 
@@ -403,7 +403,7 @@ mod tests {
                 output_smoothed_plus_dm[i - 1],
                 output_smoothed_minus_dm[i - 1],
                 output_smoothed_tr[i - 1],
-                param_period,
+                opt_period,
             )
             .unwrap();
 

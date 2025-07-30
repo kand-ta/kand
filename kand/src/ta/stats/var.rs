@@ -7,13 +7,13 @@ use crate::{KandError, TAFloat};
 /// can be calculated. For Variance calculation, this equals the specified period minus one.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for Variance calculation (must be >= 2)
+/// * `opt_period` - The time period used for Variance calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period (period - 1) on success
 ///
 /// # Errors
-/// * Returns `KandError::InvalidParameter` if `param_period` is less than 2
+/// * Returns `KandError::InvalidParameter` if `opt_period` is less than 2
 ///
 /// # Example
 /// ```
@@ -22,14 +22,14 @@ use crate::{KandError, TAFloat};
 /// let lookback = var::lookback(period).unwrap();
 /// assert_eq!(lookback, 13); // lookback is period - 1
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates Variance (VAR) for an entire price series.
@@ -55,7 +55,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_prices` - Array of input price values
-/// * `param_period` - The time period for Variance calculation (must be >= 2)
+/// * `opt_period` - The time period for Variance calculation (must be >= 2)
 /// * `output_var` - Array to store calculated Variance values
 /// * `output_sum` - Array to store running sum values
 /// * `output_sum_sq` - Array to store running sum of squares values
@@ -91,13 +91,13 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn var(
     input_prices: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_var: &mut [TAFloat],
     output_sum: &mut [TAFloat],
     output_sum_sq: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_prices.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -112,7 +112,7 @@ pub fn var(
         }
 
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
 
@@ -135,20 +135,20 @@ pub fn var(
     // Calculate initial values
     let mut sum = 0.0;
     let mut sum_sq = 0.0;
-    for val in input_prices.iter().take(param_period) {
+    for val in input_prices.iter().take(opt_period) {
         sum += *val;
         sum_sq += *val * *val;
     }
 
-    let period_t = param_period as TAFloat;
+    let period_t = opt_period as TAFloat;
     let mean = sum / period_t;
     output_var[lookback] = sum.mul_add(-mean, sum_sq) / period_t;
     output_sum[lookback] = sum;
     output_sum_sq[lookback] = sum_sq;
 
     // Calculate remaining VAR values incrementally
-    for i in param_period..len {
-        let old_val = input_prices[i - param_period];
+    for i in opt_period..len {
+        let old_val = input_prices[i - opt_period];
         let new_val = input_prices[i];
 
         sum = sum - old_val + new_val;
@@ -181,7 +181,7 @@ pub fn var(
 /// * `prev_sum` - Previous sum of values in the period
 /// * `prev_sum_sq` - Previous sum of squared values in the period
 /// * `input_old_price` - Oldest price value to remove from calculation
-/// * `param_period` - The time period for Variance calculation (must be >= 2)
+/// * `opt_period` - The time period for Variance calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing (variance, `new_sum`, `new_sum_sq`) on success
@@ -207,12 +207,12 @@ pub fn var_inc(
     prev_sum: TAFloat,
     prev_sum_sq: TAFloat,
     input_old_price: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -235,7 +235,7 @@ pub fn var_inc(
         input_old_price.mul_add(-input_old_price, prev_sum_sq),
     );
 
-    let period_t = param_period as TAFloat;
+    let period_t = opt_period as TAFloat;
     let mean = new_sum / period_t;
     let var = new_sum.mul_add(-mean, new_sum_sq) / period_t;
 
@@ -255,14 +255,14 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_var = vec![0.0; input_close.len()];
         let mut output_sum = vec![0.0; input_close.len()];
         let mut output_sum_sq = vec![0.0; input_close.len()];
 
         var(
             &input_close,
-            param_period,
+            opt_period,
             &mut output_var,
             &mut output_sum,
             &mut output_sum_sq,
@@ -305,8 +305,8 @@ mod tests {
                 input_close[i],
                 prev_sum,
                 prev_sum_sq,
-                input_close[i - param_period],
-                param_period,
+                input_close[i - opt_period],
+                opt_period,
             )
             .unwrap();
             assert_relative_eq!(var, output_var[i], epsilon = 0.0001);

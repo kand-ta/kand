@@ -7,13 +7,13 @@ use crate::{KandError, TAFloat};
 /// For the -DM indicator, this equals `period - 1`.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for calculation (must be >= 2)
+/// * `opt_period` - The time period used for calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period (period - 1) on success
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Examples
 /// ```
@@ -22,15 +22,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = minus_dm::lookback(period).unwrap();
 /// assert_eq!(lookback, 13);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates Minus Directional Movement (-DM) for a price series.
@@ -64,7 +64,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Arguments
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
-/// * `param_period` - Time period for calculation (must be >= 2)
+/// * `opt_period` - Time period for calculation (must be >= 2)
 /// * `output_dm` - Array to store calculated -DM values
 ///
 /// # Returns
@@ -90,11 +90,11 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 pub fn minus_dm(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_dm: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -127,7 +127,7 @@ pub fn minus_dm(
     // Calculate first -DM values and initial -DM (sum of -DM1)
     let mut dm_sum = 0.0;
 
-    for i in 1..param_period {
+    for i in 1..opt_period {
         let high_diff = input_high[i] - input_high[i - 1];
         let low_diff = input_low[i - 1] - input_low[i];
 
@@ -141,7 +141,7 @@ pub fn minus_dm(
     output_dm[lookback] = dm_sum;
 
     // Calculate remaining -DM values using Wilder's smoothing
-    for i in param_period..len {
+    for i in opt_period..len {
         let high_diff = input_high[i] - input_high[i - 1];
         let low_diff = input_low[i - 1] - input_low[i];
 
@@ -151,7 +151,7 @@ pub fn minus_dm(
             0.0
         };
 
-        output_dm[i] = output_dm[i - 1] - (output_dm[i - 1] / param_period as TAFloat) + dm;
+        output_dm[i] = output_dm[i - 1] - (output_dm[i - 1] / opt_period as TAFloat) + dm;
     }
 
     // Fill initial values with NAN
@@ -185,7 +185,7 @@ pub fn minus_dm(
 /// * `input_low` - Current low price
 /// * `prev_low` - Previous low price
 /// * `prev_minus_dm` - Previous -DM value
-/// * `param_period` - Time period for calculation (must be between 2 and 100)
+/// * `opt_period` - Time period for calculation (must be between 2 and 100)
 ///
 /// # Returns
 /// * `Result<TAFloat, KandError>` - The next -DM value on success
@@ -221,12 +221,12 @@ pub fn minus_dm_inc(
     input_low: TAFloat,
     prev_low: TAFloat,
     prev_minus_dm: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -253,7 +253,7 @@ pub fn minus_dm_inc(
         0.0
     };
 
-    Ok(prev_minus_dm - (prev_minus_dm / param_period as TAFloat) + dm)
+    Ok(prev_minus_dm - (prev_minus_dm / opt_period as TAFloat) + dm)
 }
 
 #[cfg(test)]
@@ -277,13 +277,13 @@ mod tests {
             35012.3, 35022.2, 34931.6, 34911.0, 34952.5, 34977.9, 35039.0, 35073.0, 35055.0,
             35084.0, 35060.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_dm = vec![0.0; input_high.len()];
 
-        minus_dm(&input_high, &input_low, param_period, &mut output_dm).unwrap();
+        minus_dm(&input_high, &input_low, opt_period, &mut output_dm).unwrap();
 
         // First period-1 values should be NaN
-        for value in output_dm.iter().take(param_period - 1) {
+        for value in output_dm.iter().take(opt_period - 1) {
             assert!(value.is_nan());
         }
 
@@ -321,7 +321,7 @@ mod tests {
                 input_low[i],
                 input_low[i - 1],
                 prev_dm,
-                param_period,
+                opt_period,
             )
             .unwrap();
             assert_relative_eq!(result, output_dm[i], epsilon = 0.0001);

@@ -8,13 +8,13 @@ use crate::{KandError, TAFloat};
 /// the first value.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for ROCP calculation (usize)
+/// * `opt_period` - The time period used for ROCP calculation (usize)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period if parameters are valid
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 1 (when "check" feature enabled)
+/// * `KandError::InvalidParameter` - If `opt_period` < 1 (when "check" feature enabled)
 ///
 /// # Example
 /// ```
@@ -22,15 +22,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = rocp::lookback(14).unwrap();
 /// assert_eq!(lookback, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 1 {
+        if opt_period < 1 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Rate of Change Percentage (ROCP) technical indicator for a price series.
@@ -53,7 +53,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_price` - Array of price values
-/// * `param_period` - Number of periods to look back, must be >= 1
+/// * `opt_period` - Number of periods to look back, must be >= 1
 /// * `output_rocp` - Array to store calculated ROCP values. Must be same length as `input_price`.
 ///
 /// # Returns
@@ -63,7 +63,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// Returns error if:
 /// * Input arrays are empty (with "check" feature)
 /// * Input and output arrays have different lengths (with "check" feature)
-/// * `param_period` < 1 (with "check" feature)
+/// * `opt_period` < 1 (with "check" feature)
 /// * Insufficient data points (with "check" feature)
 /// * Input contains NaN values (with "`check-nan`" feature)
 ///
@@ -72,18 +72,18 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// use kand::ohlcv::rocp;
 ///
 /// let input_price = vec![10.0, 10.5, 11.2, 10.8, 11.5];
-/// let param_period = 2;
+/// let opt_period = 2;
 /// let mut output_rocp = vec![0.0; 5];
 ///
-/// rocp::rocp(&input_price, param_period, &mut output_rocp).unwrap();
+/// rocp::rocp(&input_price, opt_period, &mut output_rocp).unwrap();
 /// ```
 pub fn rocp(
     input_price: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_rocp: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_price.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -115,7 +115,7 @@ pub fn rocp(
     // Calculate ROCP values
     for i in lookback..len {
         output_rocp[i] =
-            (input_price[i] - input_price[i - param_period]) / input_price[i - param_period];
+            (input_price[i] - input_price[i - opt_period]) / input_price[i - opt_period];
     }
 
     // Fill initial values with NAN
@@ -181,10 +181,10 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6,
         ];
-        let param_period = 10;
+        let opt_period = 10;
         let mut output_rocp = vec![0.0; input_price.len()];
 
-        rocp(&input_price, param_period, &mut output_rocp).unwrap();
+        rocp(&input_price, opt_period, &mut output_rocp).unwrap();
 
         // First 10 values should be NaN
         for value in output_rocp.iter().take(10) {
@@ -210,8 +210,8 @@ mod tests {
         }
 
         // Test incremental calculation matches regular calculation
-        for i in param_period..input_price.len() {
-            let result = rocp_inc(input_price[i], input_price[i - param_period]).unwrap();
+        for i in opt_period..input_price.len() {
+            let result = rocp_inc(input_price[i], input_price[i - opt_period]).unwrap();
             assert_relative_eq!(result, output_rocp[i], epsilon = 0.000_000_1);
         }
     }

@@ -4,16 +4,16 @@ use crate::{TAFloat, error::KandError, helper::period_to_k};
 ///
 /// # Description
 /// Calculates the minimum number of historical data points needed before generating the first valid DEMA value.
-/// For DEMA, this equals 2 * (`param_period` - 1) due to the double exponential smoothing process.
+/// For DEMA, this equals 2 * (`opt_period` - 1) due to the double exponential smoothing process.
 ///
 /// # Arguments
-/// * `param_period` - The smoothing period used for EMA calculations. Must be >= 2.
+/// * `opt_period` - The smoothing period used for EMA calculations. Must be >= 2.
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The required lookback period if successful
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Example
 /// ```
@@ -21,14 +21,14 @@ use crate::{TAFloat, error::KandError, helper::period_to_k};
 /// let lookback = dema::lookback(5).unwrap();
 /// assert_eq!(lookback, 8); // 2 * (5-1) = 8
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(2 * (param_period - 1))
+    Ok(2 * (opt_period - 1))
 }
 
 /// Calculates Double Exponential Moving Average (DEMA) for a price series.
@@ -52,7 +52,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input` - Array of price values to calculate DEMA
-/// * `param_period` - The smoothing period for EMA calculations. Must be >= 2.
+/// * `opt_period` - The smoothing period for EMA calculations. Must be >= 2.
 /// * `output_dema` - Array to store calculated DEMA values
 /// * `output_ema1` - Array to store first EMA values
 /// * `output_ema2` - Array to store second EMA values
@@ -86,13 +86,13 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn dema(
     input: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_dema: &mut [TAFloat],
     output_ema1: &mut [TAFloat],
     output_ema2: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -121,35 +121,31 @@ pub fn dema(
         }
     }
 
-    let alpha = period_to_k(param_period)?;
+    let alpha = period_to_k(opt_period)?;
 
     // Calculate initial SMA for first EMA
     let mut sum = input[0];
-    for price in input.iter().take(param_period).skip(1) {
+    for price in input.iter().take(opt_period).skip(1) {
         sum += *price;
     }
-    let mut prev_ema1 = sum / param_period as TAFloat;
-    output_ema1[param_period - 1] = prev_ema1;
+    let mut prev_ema1 = sum / opt_period as TAFloat;
+    output_ema1[opt_period - 1] = prev_ema1;
 
     // Calculate first EMA series
-    for i in param_period..len {
+    for i in opt_period..len {
         prev_ema1 = input[i].mul_add(alpha, prev_ema1 * (1.0 - alpha));
         output_ema1[i] = prev_ema1;
     }
     // Initialize second EMA with SMA of first EMA
-    let mut sum = output_ema1[param_period - 1];
-    for value in output_ema1
-        .iter()
-        .take(param_period * 2 - 1)
-        .skip(param_period)
-    {
+    let mut sum = output_ema1[opt_period - 1];
+    for value in output_ema1.iter().take(opt_period * 2 - 1).skip(opt_period) {
         sum += *value;
     }
-    let mut prev_ema2 = sum / param_period as TAFloat;
-    output_ema2[param_period * 2 - 2] = prev_ema2;
+    let mut prev_ema2 = sum / opt_period as TAFloat;
+    output_ema2[opt_period * 2 - 2] = prev_ema2;
 
     // Calculate second EMA series (EMA of EMA)
-    for i in param_period * 2 - 1..len {
+    for i in opt_period * 2 - 1..len {
         prev_ema2 = output_ema1[i].mul_add(alpha, prev_ema2 * (1.0 - alpha));
         output_ema2[i] = prev_ema2;
     }
@@ -187,7 +183,7 @@ pub fn dema(
 /// * `input_price` - Current price value
 /// * `prev_ema1` - Previous value of first EMA
 /// * `prev_ema2` - Previous value of second EMA
-/// * `param_period` - The smoothing period. Must be >= 2.
+/// * `opt_period` - The smoothing period. Must be >= 2.
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing (DEMA, `new_ema1`, `new_ema2`) if successful
@@ -211,12 +207,12 @@ pub fn dema_inc(
     input_price: TAFloat,
     prev_ema1: TAFloat,
     prev_ema2: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -228,7 +224,7 @@ pub fn dema_inc(
         }
     }
 
-    let alpha = period_to_k(param_period)?;
+    let alpha = period_to_k(opt_period)?;
 
     let new_ema1 = input_price.mul_add(alpha, prev_ema1 * (1.0 - alpha));
     let new_ema2 = new_ema1.mul_add(alpha, prev_ema2 * (1.0 - alpha));
@@ -250,14 +246,14 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6,
         ];
-        let param_period = 5;
+        let opt_period = 5;
         let mut output_dema = vec![0.0; input.len()];
         let mut output_ema1 = vec![0.0; input.len()];
         let mut output_ema2 = vec![0.0; input.len()];
 
         dema(
             &input,
-            param_period,
+            opt_period,
             &mut output_dema,
             &mut output_ema1,
             &mut output_ema2,
@@ -296,7 +292,7 @@ mod tests {
         // Test each incremental step
         for i in 10..15 {
             let (dema_val, new_ema1, new_ema2) =
-                dema_inc(input[i], prev_ema1, prev_ema2, param_period).unwrap();
+                dema_inc(input[i], prev_ema1, prev_ema2, opt_period).unwrap();
 
             assert_relative_eq!(dema_val, output_dema[i], epsilon = 0.0001);
             assert_relative_eq!(new_ema1, output_ema1[i], epsilon = 0.0001);

@@ -2,59 +2,59 @@ use crate::{KandError, TAFloat, TAPeriod};
 
 /// Returns the lookback period for Simple Moving Average (SMA) without input validation.
 ///
-/// Assumes valid inputs; returns `param_period - 1`.
+/// Assumes valid inputs; returns `opt_period - 1`.
 ///
 /// # Panics
 ///
-/// Panics in debug builds if `param_period < 1` due to subtraction overflow.
+/// Panics in debug builds if `opt_period < 1` due to subtraction overflow.
 #[inline]
 #[must_use]
-pub const fn lookback_raw(param_period: TAPeriod) -> TAPeriod {
-    param_period - 1
+pub const fn lookback_raw(opt_period: TAPeriod) -> TAPeriod {
+    opt_period - 1
 }
 
-/// Returns the lookback period for SMA calculation (`param_period - 1`).
+/// Returns the lookback period for SMA calculation (`opt_period - 1`).
 ///
 /// # Errors
 ///
-/// Returns [`KandError::InvalidParameter`] if `param_period < 2` (with "check" feature).
+/// Returns [`KandError::InvalidParameter`] if `opt_period < 2` (with "check" feature).
 #[must_use]
-pub const fn lookback(param_period: TAPeriod) -> Result<TAPeriod, KandError> {
+pub const fn lookback(opt_period: TAPeriod) -> Result<TAPeriod, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Computes SMA without input validation for high performance.
 ///
-/// Sums prices over `param_period` and divides by period length.
+/// Sums prices over `opt_period` and divides by period length.
 /// Stores results in `output`, leaving first `lookback` values unset.
 ///
 /// # Assumptions
 ///
 /// - `input` and `output` have equal length and sufficient data.
 /// - Inputs are valid; no error checking performed.
-pub fn sma_raw(input: &[TAFloat], param_period: TAPeriod, output: &mut [TAFloat]) {
+pub fn sma_raw(input: &[TAFloat], opt_period: TAPeriod, output: &mut [TAFloat]) {
     let len = input.len();
-    let lookback = lookback_raw(param_period);
+    let lookback = lookback_raw(opt_period);
 
-    let mut sum = input.iter().take(param_period).sum::<TAFloat>();
-    let period_float = param_period as TAFloat; // TODO: Safely convert TAPeriod to TAFloat
+    let mut sum = input.iter().take(opt_period).sum::<TAFloat>();
+    let period_float = opt_period as TAFloat; // TODO: Safely convert TAPeriod to TAFloat
     output[lookback] = sum / period_float;
 
     for i in lookback + 1..len {
-        sum = sum + input[i] - input[i - param_period];
+        sum = sum + input[i] - input[i - opt_period];
         output[i] = sum / period_float;
     }
 }
 
 /// Computes SMA over a price series, smoothing data to identify trends.
 ///
-/// Formula: `SMA = (P1 + P2 + ... + Pn) / n`, where `n` is `param_period`.
+/// Formula: `SMA = (P1 + P2 + ... + Pn) / n`, where `n` is `opt_period`.
 /// Sets first `period - 1` output values to NaN (with "allow-nan" feature).
 ///
 /// # Errors
@@ -69,11 +69,11 @@ pub fn sma_raw(input: &[TAFloat], param_period: TAPeriod, output: &mut [TAFloat]
 /// - [`KandError::NaNDetected`] if any input is NaN.
 pub fn sma(
     input: &[TAFloat],
-    param_period: TAPeriod,
+    opt_period: TAPeriod,
     output: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -95,7 +95,7 @@ pub fn sma(
         }
     }
 
-    sma_raw(input, param_period, output);
+    sma_raw(input, opt_period, output);
 
     #[cfg(feature = "allow-nan")]
     {
@@ -116,12 +116,12 @@ pub fn sma(
 /// Inputs are valid; no error checking performed.
 #[must_use]
 pub fn sma_inc_raw(
-    prev_sma: TAFloat,
     input: TAFloat,
     prev_input: TAFloat,
-    param_period: TAPeriod,
+    prev_sma: TAFloat,
+    opt_period: TAPeriod,
 ) -> TAFloat {
-    prev_sma + (input - prev_input) / param_period as TAFloat // TODO: Safely convert TAPeriod to TAFloat
+    prev_sma + (input - prev_input) / opt_period as TAFloat // TODO: Safely convert TAPeriod to TAFloat
 }
 
 /// Computes the next SMA value incrementally using the previous SMA.
@@ -131,20 +131,20 @@ pub fn sma_inc_raw(
 /// # Errors
 ///
 /// With "check" feature:
-/// - [`KandError::InvalidParameter`] if `param_period < 2`.
+/// - [`KandError::InvalidParameter`] if `opt_period < 2`.
 ///
 /// With "check-nan" feature:
 /// - [`KandError::NaNDetected`] if any input is NaN.
 #[must_use]
 pub fn sma_inc(
-    prev_sma: TAFloat,
     input: TAFloat,
     prev_input: TAFloat,
-    param_period: TAPeriod,
+    prev_sma: TAFloat,
+    opt_period: TAPeriod,
 ) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -156,7 +156,7 @@ pub fn sma_inc(
         }
     }
 
-    Ok(sma_inc_raw(prev_sma, input, prev_input, param_period))
+    Ok(sma_inc_raw(input, prev_input, prev_sma, opt_period))
 }
 
 #[cfg(test)]
@@ -213,7 +213,7 @@ mod tests {
         // Verify incremental calculation
         let mut prev_sma = output[LOOKBACK];
         for i in (LOOKBACK + 1)..INPUT_DATA.len() {
-            let result = sma_inc(prev_sma, INPUT_DATA[i], INPUT_DATA[i - PERIOD], PERIOD).unwrap();
+            let result = sma_inc(INPUT_DATA[i], INPUT_DATA[i - PERIOD], prev_sma, PERIOD).unwrap();
             assert_relative_eq!(result, output[i], epsilon = EPSILON);
             prev_sma = result;
         }
@@ -239,7 +239,7 @@ mod tests {
         // Verify incremental calculation
         let mut prev_sma = output[LOOKBACK];
         for i in (LOOKBACK + 1)..INPUT_DATA.len() {
-            let result = sma_inc(prev_sma, INPUT_DATA[i], INPUT_DATA[i - PERIOD], PERIOD).unwrap();
+            let result = sma_inc(INPUT_DATA[i], INPUT_DATA[i - PERIOD], prev_sma, PERIOD).unwrap();
             assert_relative_eq!(result, output[i], epsilon = EPSILON);
             prev_sma = result;
         }

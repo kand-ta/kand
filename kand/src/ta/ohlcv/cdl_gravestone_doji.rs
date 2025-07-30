@@ -45,7 +45,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices for each period
 /// * `input_low` - Array of low prices for each period
 /// * `input_close` - Array of closing prices for each period
-/// * `param_body_percent` - Maximum body size as percentage of total range to qualify as doji (e.g. 5.0 for 5%)
+/// * `opt_body_percent` - Maximum body size as percentage of total range to qualify as doji (e.g. 5.0 for 5%)
 /// * `output_signals` - Output array that will contain the pattern signals:
 ///   - -100: Bearish Gravestone Doji pattern detected
 ///   - 0: No pattern detected
@@ -55,7 +55,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// # Errors
 /// * [`KandError::LengthMismatch`] - If input arrays have different lengths
 /// * [`KandError::NaNDetected`] - If any input contains NaN values (when `check-nan` feature enabled)
-/// * [`KandError::InvalidParameter`] - If `param_body_percent` is less than or equal to zero
+/// * [`KandError::InvalidParameter`] - If `opt_body_percent` is less than or equal to zero
 ///
 /// # Examples
 /// ```
@@ -82,7 +82,7 @@ pub fn cdl_gravestone_doji(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_body_percent: TAFloat,
+    opt_body_percent: TAFloat,
     output_signals: &mut [TAInt],
 ) -> Result<(), KandError> {
     let len = input_open.len();
@@ -119,7 +119,7 @@ pub fn cdl_gravestone_doji(
             input_high[i],
             input_low[i],
             input_close[i],
-            param_body_percent,
+            opt_body_percent,
         )?;
     }
 
@@ -146,7 +146,7 @@ pub fn cdl_gravestone_doji(
 /// * `input_high` - High price of the candlestick
 /// * `input_low` - Low price of the candlestick
 /// * `input_close` - Closing price of the candlestick
-/// * `param_body_percent` - Maximum body size as percentage of total range to qualify as doji
+/// * `opt_body_percent` - Maximum body size as percentage of total range to qualify as doji
 ///
 /// # Returns
 /// * `Ok(TAInt)` - Signal value where:
@@ -154,7 +154,7 @@ pub fn cdl_gravestone_doji(
 ///   - 0: No pattern detected
 ///
 /// # Errors
-/// * [`KandError::InvalidParameter`] - If `param_body_percent` is less than or equal to zero
+/// * [`KandError::InvalidParameter`] - If `opt_body_percent` is less than or equal to zero
 /// * [`KandError::NaNDetected`] - If any input value is NaN (when `check-nan` feature enabled)
 /// * [`KandError::ConversionError`] - If numeric conversion fails
 ///
@@ -176,7 +176,7 @@ pub fn cdl_gravestone_doji_inc(
     input_high: TAFloat,
     input_low: TAFloat,
     input_close: TAFloat,
-    param_body_percent: TAFloat,
+    opt_body_percent: TAFloat,
 ) -> Result<TAInt, KandError> {
     #[cfg(feature = "check-nan")]
     {
@@ -191,7 +191,7 @@ pub fn cdl_gravestone_doji_inc(
     let dn_shadow = lower_shadow_length(input_low, input_open, input_close);
 
     // Check for Gravestone Doji pattern
-    let is_doji_body = range > 0.0 && body <= range * param_body_percent / 100.0;
+    let is_doji_body = range > 0.0 && body <= range * opt_body_percent / 100.0;
     let has_minimal_lower_shadow = dn_shadow <= body;
 
     let output_signal = if is_doji_body && has_minimal_lower_shadow {
@@ -230,7 +230,7 @@ mod tests {
             102_354.8, 101_928.4, 101_923.6, 101_226.3, 101_260.0,
         ];
 
-        let param_body_percent = 5.0;
+        let opt_body_percent = 5.0;
         let mut output_signals = vec![0i64; input_open.len()];
 
         cdl_gravestone_doji(
@@ -238,7 +238,7 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_body_percent,
+            opt_body_percent,
             &mut output_signals,
         )
         .unwrap();
@@ -255,7 +255,7 @@ mod tests {
                 input_high[i],
                 input_low[i],
                 input_close[i],
-                param_body_percent,
+                opt_body_percent,
             )
             .unwrap();
             assert_eq!(output_signal, output_signals[i]);

@@ -7,13 +7,13 @@ use crate::{KandError, TAFloat};
 /// The lookback period determines how many data points are needed before the first valid NATR value can be calculated.
 ///
 /// # Arguments
-/// * `param_period` - The period used for NATR calculation. Must be >= 2.
+/// * `opt_period` - The period used for NATR calculation. Must be >= 2.
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The number of data points needed before first valid output
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 ///
 /// # Example
 /// ```
@@ -22,15 +22,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = natr::lookback(period).unwrap();
 /// assert_eq!(lookback, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Normalized Average True Range (NATR) for the entire input array
@@ -55,7 +55,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - Period for NATR calculation (must be >= 2)
+/// * `opt_period` - Period for NATR calculation (must be >= 2)
 /// * `output_natr` - Array to store calculated NATR values
 ///
 /// # Returns
@@ -64,7 +64,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input arrays have different lengths
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::InsufficientData` - If input length <= lookback period
 /// * `KandError::NaNDetected` - If any input contains NaN values
 ///
@@ -84,11 +84,11 @@ pub fn natr(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_natr: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -124,7 +124,7 @@ pub fn natr(
         input_high,
         input_low,
         input_close,
-        param_period,
+        opt_period,
         &mut atr_values,
     )?;
 
@@ -160,13 +160,13 @@ pub fn natr(
 /// * `input_close` - Current period's closing price
 /// * `prev_close` - Previous period's closing price
 /// * `prev_atr` - Previous period's ATR value
-/// * `param_period` - Period for NATR calculation (must be >= 2)
+/// * `opt_period` - Period for NATR calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<TAFloat, KandError>` - The calculated NATR value
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::NaNDetected` - If any input contains NaN values
 ///
 /// # Example
@@ -188,12 +188,12 @@ pub fn natr_inc(
     input_close: TAFloat,
     prev_close: TAFloat,
     prev_atr: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -211,7 +211,7 @@ pub fn natr_inc(
         }
     }
 
-    let output_atr = atr::atr_inc(input_high, input_low, prev_close, prev_atr, param_period)?;
+    let output_atr = atr::atr_inc(input_high, input_low, prev_close, prev_atr, opt_period)?;
     Ok((output_atr / input_close) * 100.0)
 }
 
@@ -241,20 +241,20 @@ mod tests {
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0, 35114.5, 35097.2,
             35092.0, 35073.2, 35139.3,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_natr = vec![0.0; input_high.len()];
 
         natr(
             &input_high,
             &input_low,
             &input_close,
-            param_period,
+            opt_period,
             &mut output_natr,
         )
         .unwrap();
 
         // First period values should be NaN
-        for value in output_natr.iter().take(param_period) {
+        for value in output_natr.iter().take(opt_period) {
             assert!(value.is_nan());
         }
 
@@ -279,18 +279,18 @@ mod tests {
         ];
 
         for (i, expected) in expected_values.iter().enumerate() {
-            assert_relative_eq!(output_natr[i + param_period], *expected, epsilon = 0.1);
+            assert_relative_eq!(output_natr[i + opt_period], *expected, epsilon = 0.1);
         }
 
         // Test incremental calculation matches
-        for i in param_period + 1..input_high.len() {
+        for i in opt_period + 1..input_high.len() {
             let output_natr_inc = natr_inc(
                 input_high[i],
                 input_low[i],
                 input_close[i],
                 input_close[i - 1],
                 output_natr[i - 1] * input_close[i - 1] / 100.0,
-                param_period,
+                opt_period,
             )
             .unwrap();
             assert_relative_eq!(output_natr_inc, output_natr[i], epsilon = 0.00001);

@@ -6,7 +6,7 @@ use crate::{EPSILON, KandError, TAFloat};
 /// can be calculated. For Maximum Value, this equals the period minus one.
 ///
 /// # Arguments
-/// * `param_period` - The time period for calculation (must be >= 2)
+/// * `opt_period` - The time period for calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period (period - 1) on success
@@ -21,14 +21,14 @@ use crate::{EPSILON, KandError, TAFloat};
 /// let lookback = max::lookback(period).unwrap();
 /// assert_eq!(lookback, 13);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates Maximum Value for a series of prices over a specified period.
@@ -47,7 +47,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_prices` - Array of input price values
-/// * `param_period` - The time period for calculation (must be >= 2)
+/// * `opt_period` - The time period for calculation (must be >= 2)
 /// * `output_max` - Array to store calculated MAX values (first period-1 values are NaN)
 ///
 /// # Returns
@@ -72,11 +72,11 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn max(
     input_prices: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_max: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_prices.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -96,7 +96,7 @@ pub fn max(
         }
 
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -139,7 +139,7 @@ pub fn max(
 /// * `input_price` - The newest price value to include in calculation
 /// * `prev_max` - The previous period's MAX value
 /// * `input_old_price` - The oldest price value being removed from the period
-/// * `param_period` - The time period for calculation (must be >= 2)
+/// * `opt_period` - The time period for calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<TAFloat, KandError>` - The new MAX value on success
@@ -163,12 +163,12 @@ pub fn max_inc(
     input_price: TAFloat,
     prev_max: TAFloat,
     input_old_price: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -208,10 +208,10 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_max = vec![0.0; input_close.len()];
 
-        max(&input_close, param_period, &mut output_max).unwrap();
+        max(&input_close, opt_period, &mut output_max).unwrap();
 
         // First 13 values should be NaN
         for value in output_max.iter().take(13) {
@@ -236,8 +236,8 @@ mod tests {
             let result = max_inc(
                 input_close[i],
                 prev_max,
-                input_close[i - param_period],
-                param_period,
+                input_close[i - opt_period],
+                opt_period,
             )
             .unwrap();
             assert_relative_eq!(result, output_max[i], epsilon = 0.0001);

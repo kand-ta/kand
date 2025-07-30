@@ -22,7 +22,7 @@ pyo3 = {workspace = true, features = ["extension-module"]}
 kand = { workspace = true}
 
 [features]
-default = ["f32", "i64"]                  # Default: extended precision with basic checks
+default = ["f64", "i64", "check"]         # Default: extended precision with basic checks
 f32 = ["kand/f32"]                        # 32-bit floating point
 f64 = ["kand/f64"]                        # 64-bit floating point
 i32 = ["kand/i32"]                        # 32-bit integer

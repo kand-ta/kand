@@ -17,19 +17,15 @@ use crate::{KandError, TAFloat};
 /// assert_eq!(lookback, 9);
 /// ```
 #[must_use]
-pub const fn lookback(
-    param_fast_period: usize,
-    param_slow_period: usize,
-) -> Result<usize, KandError> {
+pub const fn lookback(opt_fast_period: usize, opt_slow_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_fast_period < 2 || param_slow_period < 2 || param_fast_period >= param_slow_period
-        {
+        if opt_fast_period < 2 || opt_slow_period < 2 || opt_fast_period >= opt_slow_period {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    ema::lookback(param_slow_period)
+    ema::lookback(opt_slow_period)
 }
 
 /// Calculates the Accumulation/Distribution Oscillator (A/D Oscillator or ADOSC) for the entire price series.
@@ -96,15 +92,15 @@ pub fn adosc(
     input_low: &[TAFloat],
     input_close: &[TAFloat],
     input_volume: &[TAFloat],
-    param_fast_period: usize,
-    param_slow_period: usize,
+    opt_fast_period: usize,
+    opt_slow_period: usize,
     output_adosc: &mut [TAFloat],
     output_ad: &mut [TAFloat],
     output_ad_fast_ema: &mut [TAFloat],
     output_ad_slow_ema: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_fast_period, param_slow_period)?;
+    let lookback = lookback(opt_fast_period, opt_slow_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -143,8 +139,8 @@ pub fn adosc(
 
     ad::ad(input_high, input_low, input_close, input_volume, output_ad)?;
 
-    ema::ema(output_ad, param_fast_period, None, output_ad_fast_ema)?;
-    ema::ema(output_ad, param_slow_period, None, output_ad_slow_ema)?;
+    ema::ema(output_ad, opt_fast_period, None, output_ad_fast_ema)?;
+    ema::ema(output_ad, opt_slow_period, None, output_ad_slow_ema)?;
 
     for i in lookback..len {
         output_adosc[i] = output_ad_fast_ema[i] - output_ad_slow_ema[i];
@@ -201,15 +197,12 @@ pub fn adosc_inc(
     prev_ad: TAFloat,
     prev_ad_fast_ema: TAFloat,
     prev_ad_slow_ema: TAFloat,
-    param_fast_period: usize,
-    param_slow_period: usize,
+    opt_fast_period: usize,
+    opt_slow_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_fast_period == 0
-            || param_slow_period == 0
-            || param_fast_period >= param_slow_period
-        {
+        if opt_fast_period == 0 || opt_slow_period == 0 || opt_fast_period >= opt_slow_period {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -229,8 +222,8 @@ pub fn adosc_inc(
     }
 
     let output_ad = ad::ad_inc(input_high, input_low, input_close, input_volume, prev_ad)?;
-    let output_ad_fast_ema = ema::ema_inc(output_ad, prev_ad_fast_ema, param_fast_period, None)?;
-    let output_ad_slow_ema = ema::ema_inc(output_ad, prev_ad_slow_ema, param_slow_period, None)?;
+    let output_ad_fast_ema = ema::ema_inc(output_ad, prev_ad_fast_ema, opt_fast_period, None)?;
+    let output_ad_slow_ema = ema::ema_inc(output_ad, prev_ad_slow_ema, opt_slow_period, None)?;
     let output_adosc = output_ad_fast_ema - output_ad_slow_ema;
 
     Ok((
@@ -308,8 +301,8 @@ mod tests {
             685.384, 737.572, 576.129, 264.406, 577.913, 314.803, 694.229, 1253.468, 466.235,
             248.839,
         ];
-        let param_fast_period = 3;
-        let param_slow_period = 10;
+        let opt_fast_period = 3;
+        let opt_slow_period = 10;
         let mut output_adosc = vec![0.0; input_high.len()];
         let mut output_ad = vec![0.0; input_high.len()];
         let mut output_ad_fast_ema = vec![0.0; input_high.len()];
@@ -320,8 +313,8 @@ mod tests {
             &input_low,
             &input_close,
             &input_volume,
-            param_fast_period,
-            param_slow_period,
+            opt_fast_period,
+            opt_slow_period,
             &mut output_adosc,
             &mut output_ad,
             &mut output_ad_fast_ema,
@@ -449,8 +442,8 @@ mod tests {
                     prev_ad,
                     prev_ad_fast_ema,
                     prev_ad_slow_ema,
-                    param_fast_period,
-                    param_slow_period,
+                    opt_fast_period,
+                    opt_slow_period,
                 )
                 .unwrap();
             assert_relative_eq!(output_adosc_inc, output_adosc[i], epsilon = EPSILON);

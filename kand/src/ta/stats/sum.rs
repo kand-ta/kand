@@ -6,7 +6,7 @@ use crate::{KandError, TAFloat};
 /// can be calculated. For Sum, this equals the period minus 1.
 ///
 /// # Arguments
-/// * `param_period` - The time period for Sum calculation (must be >= 2)
+/// * `opt_period` - The time period for Sum calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period (period - 1) on success, or error on failure
@@ -21,14 +21,14 @@ use crate::{KandError, TAFloat};
 /// let lookback = sum::lookback(period).unwrap();
 /// assert_eq!(lookback, 13); // lookback is period - 1
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates the Sum indicator for a price series.
@@ -51,7 +51,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_prices` - Slice of input price values
-/// * `param_period` - The time period for Sum calculation (must be >= 2)
+/// * `opt_period` - The time period for Sum calculation (must be >= 2)
 /// * `output_sum` - Mutable slice to store calculated Sum values
 ///
 /// # Returns
@@ -76,11 +76,11 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn sum(
     input_prices: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_sum: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_prices.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -95,7 +95,7 @@ pub fn sum(
         }
 
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
 
@@ -117,14 +117,14 @@ pub fn sum(
 
     // Calculate initial sum
     let mut sum_val = 0.0;
-    for price in input_prices.iter().take(param_period) {
+    for price in input_prices.iter().take(opt_period) {
         sum_val += *price;
     }
     output_sum[lookback] = sum_val;
 
     // Calculate subsequent sums incrementally
-    for i in param_period..len {
-        sum_val = sum_val + input_prices[i] - input_prices[i - param_period];
+    for i in opt_period..len {
+        sum_val = sum_val + input_prices[i] - input_prices[i - opt_period];
         output_sum[i] = sum_val;
     }
 
@@ -191,10 +191,10 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_sum = vec![0.0; input_close.len()];
 
-        sum(&input_close, param_period, &mut output_sum).unwrap();
+        sum(&input_close, opt_period, &mut output_sum).unwrap();
 
         // First 13 values should be NaN
         for value in output_sum.iter().take(13) {
@@ -221,7 +221,7 @@ mod tests {
 
         // Test each incremental step
         for i in 14..19 {
-            let result = sum_inc(input_close[i], input_close[i - param_period], prev_sum).unwrap();
+            let result = sum_inc(input_close[i], input_close[i - opt_period], prev_sum).unwrap();
             assert_relative_eq!(result, output_sum[i], epsilon = 0.0001);
             prev_sum = result;
         }

@@ -8,17 +8,17 @@ use crate::{
 ///
 /// # Description
 /// Calculates the minimum number of historical data points needed to generate the first valid signal.
-/// For Long Shadow pattern detection, this equals `param_period - 1` to ensure proper EMA calculation
+/// For Long Shadow pattern detection, this equals `opt_period - 1` to ensure proper EMA calculation
 /// of candle body sizes.
 ///
 /// # Arguments
-/// * `param_period` - The period used for EMA calculation of candle body sizes (must be >= 2)
+/// * `opt_period` - The period used for EMA calculation of candle body sizes (must be >= 2)
 ///
 /// # Returns
 /// * `Ok(usize)` - The required lookback period
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 ///
 /// # Examples
 /// ```
@@ -28,14 +28,14 @@ use crate::{
 /// let lookback = cdl_long_shadow::lookback(period).unwrap();
 /// assert_eq!(lookback, 13);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Detects Long Shadow candlestick patterns in price data.
@@ -63,8 +63,8 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - Period for EMA calculation of body sizes (typically 14)
-/// * `param_shadow_factor` - Minimum percentage of total range that shadow must be (typically 75.0)
+/// * `opt_period` - Period for EMA calculation of body sizes (typically 14)
+/// * `opt_shadow_factor` - Minimum percentage of total range that shadow must be (typically 75.0)
 /// * `output_signals` - Output array for pattern signals:
 ///   - 1: Bullish Long Lower Shadow
 ///   - -1: Bearish Long Upper Shadow
@@ -109,13 +109,13 @@ pub fn cdl_long_shadow(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
-    param_shadow_factor: TAFloat,
+    opt_period: usize,
+    opt_shadow_factor: TAFloat,
     output_signals: &mut [TAInt],
     output_body_avg: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_open.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -140,10 +140,10 @@ pub fn cdl_long_shadow(
         }
 
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
-        if param_shadow_factor <= 0.0 {
+        if opt_shadow_factor <= 0.0 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -163,10 +163,10 @@ pub fn cdl_long_shadow(
 
     // Calculate initial SMA
     let mut sum = 0.0;
-    for i in 0..param_period {
+    for i in 0..opt_period {
         sum += real_body_length(input_open[i], input_close[i]);
     }
-    let mut body_avg = sum / param_period as TAFloat;
+    let mut body_avg = sum / opt_period as TAFloat;
     output_body_avg[lookback] = body_avg;
 
     // Process remaining candles
@@ -177,8 +177,8 @@ pub fn cdl_long_shadow(
             input_low[i],
             input_close[i],
             body_avg,
-            param_period,
-            param_shadow_factor,
+            opt_period,
+            opt_shadow_factor,
         )?;
         output_signals[i] = signal;
         output_body_avg[i] = new_body_avg;
@@ -215,8 +215,8 @@ pub fn cdl_long_shadow(
 /// * `input_low` - Low price of the candlestick
 /// * `input_close` - Closing price of the candlestick
 /// * `prev_body_avg` - Previous EMA value of body sizes
-/// * `param_period` - Period for EMA calculation
-/// * `param_shadow_factor` - Minimum percentage of total range that shadow must be
+/// * `opt_period` - Period for EMA calculation
+/// * `opt_shadow_factor` - Minimum percentage of total range that shadow must be
 ///
 /// # Returns
 /// * `Ok((TAInt, TAFloat))` - Tuple containing:
@@ -228,8 +228,8 @@ pub fn cdl_long_shadow(
 ///
 /// # Errors
 /// * [`KandError::InvalidParameter`] - If parameters are invalid:
-///   - `param_period` is less than 2
-///   - `param_shadow_factor` is less than or equal to zero
+///   - `opt_period` is less than 2
+///   - `opt_shadow_factor` is less than or equal to zero
 /// * [`KandError::NaNDetected`] - If any input value is NaN (when `check-nan` enabled)
 /// * [`KandError::ConversionError`] - If numeric conversion fails
 ///
@@ -254,16 +254,16 @@ pub fn cdl_long_shadow_inc(
     input_low: TAFloat,
     input_close: TAFloat,
     prev_body_avg: TAFloat,
-    param_period: usize,
-    param_shadow_factor: TAFloat,
+    opt_period: usize,
+    opt_shadow_factor: TAFloat,
 ) -> Result<(TAInt, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
-        if param_shadow_factor <= 0.0 {
+        if opt_shadow_factor <= 0.0 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -285,12 +285,12 @@ pub fn cdl_long_shadow_inc(
     let up_shadow = upper_shadow_length(input_high, input_open, input_close);
     let down_shadow = lower_shadow_length(input_low, input_open, input_close);
     let total_range = input_high - input_low;
-    let k = period_to_k(param_period)?;
+    let k = period_to_k(opt_period)?;
     let body_avg = (body - prev_body_avg).mul_add(k, prev_body_avg);
 
     // Check for Long Shadow patterns
     let is_small_body = body <= body_avg;
-    let shadow_threshold = (param_shadow_factor / 100.0) * total_range;
+    let shadow_threshold = (opt_shadow_factor / 100.0) * total_range;
     let has_long_upper_shadow = up_shadow >= shadow_threshold;
     let has_long_lower_shadow = down_shadow >= shadow_threshold;
 
@@ -338,8 +338,8 @@ mod tests {
             95450.1, 95592.5, 95456.0, 95664.2, 95674.1, 95547.0, 95679.4,
         ];
 
-        let param_period = 14;
-        let param_shadow_factor = 75.0;
+        let opt_period = 14;
+        let opt_shadow_factor = 75.0;
         let mut output_signals = vec![0; input_open.len()];
         let mut output_body_avg = vec![0.0; input_open.len()];
 
@@ -348,8 +348,8 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
-            param_shadow_factor,
+            opt_period,
+            opt_shadow_factor,
             &mut output_signals,
             &mut output_body_avg,
         )
@@ -380,8 +380,8 @@ mod tests {
                 input_low[i],
                 input_close[i],
                 prev_body_avg,
-                param_period,
-                param_shadow_factor,
+                opt_period,
+                opt_shadow_factor,
             )
             .unwrap();
             assert_eq!(signal, output_signals[i]);

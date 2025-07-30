@@ -61,7 +61,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If output length != input length
 /// * `KandError::InvalidParameter` - If period < 2
 /// * `KandError::InsufficientData` - If input length <= lookback
-/// * `KandError::NaNDetected` - If any input is NaN (with `deep-check`)
+/// * `KandError::NaNDetected` - If any input is NaN (with `check-nan`)
 ///
 /// # Example
 /// ```
@@ -95,7 +95,7 @@ pub fn wma(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for &value in input {
             if value.is_nan() {
@@ -153,7 +153,7 @@ pub fn wma(
 /// # Errors
 /// * `KandError::InvalidParameter` - If period < 2
 /// * `KandError::LengthMismatch` - If `input_window` length != period
-/// * `KandError::NaNDetected` - If any input is NaN (with `deep-check`)
+/// * `KandError::NaNDetected` - If any input is NaN (with `check-nan`)
 ///
 /// # Example
 /// ```
@@ -174,7 +174,7 @@ pub fn wma_inc(input_window: &[TAFloat], param_period: usize) -> Result<TAFloat,
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for &value in input_window {
             if value.is_nan() {

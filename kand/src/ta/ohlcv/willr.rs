@@ -69,7 +69,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
 /// * `KandError::InvalidParameter` - If `param_period` < 2
 /// * `KandError::InsufficientData` - If input length <= lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If any input value is NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -124,7 +124,7 @@ pub fn willr(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_high[i].is_nan() || input_low[i].is_nan() || input_close[i].is_nan() {
@@ -183,7 +183,7 @@ pub fn willr(
 ///   - New lowest low
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - If any input value is NaN (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If any input value is NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -217,7 +217,7 @@ pub fn willr_inc(
     input_high: TAFloat,
     input_low: TAFloat,
 ) -> Result<(TAFloat, TAFloat, TAFloat), KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if prev_highest_high.is_nan()
             || prev_lowest_low.is_nan()

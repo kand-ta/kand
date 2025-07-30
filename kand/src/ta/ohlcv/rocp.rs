@@ -65,7 +65,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * Input and output arrays have different lengths (with "check" feature)
 /// * `param_period` < 1 (with "check" feature)
 /// * Insufficient data points (with "check" feature)
-/// * Input contains NaN values (with "`deep-check`" feature)
+/// * Input contains NaN values (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -103,7 +103,7 @@ pub fn rocp(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_price {
             if price.is_nan() {
@@ -145,7 +145,7 @@ pub fn rocp(
 /// * `Result<TAFloat, KandError>` - The calculated ROCP value if successful, error otherwise
 ///
 /// # Errors
-/// Returns error if (with "`deep-check`" feature):
+/// Returns error if (with "`check-nan`" feature):
 /// * Either input is NaN
 ///
 /// # Example
@@ -158,7 +158,7 @@ pub fn rocp(
 /// let output_rocp = rocp_inc(current_price, prev_price).unwrap();
 /// ```
 pub fn rocp_inc(input: TAFloat, prev: TAFloat) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input.is_nan() || prev.is_nan() {
             return Err(KandError::NaNDetected);

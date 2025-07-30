@@ -47,7 +47,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 ///
 /// - [`KandError::InvalidData`] if input arrays are empty (enabled by "check" feature).
 /// - [`KandError::LengthMismatch`] if input arrays have different lengths (enabled by "check" feature).
-/// - [`KandError::NaNDetected`] if any input contains NaN values (enabled by "deep-check" feature).
+/// - [`KandError::NaNDetected`] if any input contains NaN values (enabled by "check-nan" feature).
 ///
 /// # Examples
 ///
@@ -93,7 +93,7 @@ pub fn ad(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in lookback..len {
             if input_high[i].is_nan()
@@ -137,7 +137,7 @@ pub fn ad(
 ///
 /// # Errors
 ///
-/// - [`KandError::NaNDetected`] if any input contains NaN values (enabled by "deep-check" feature).
+/// - [`KandError::NaNDetected`] if any input contains NaN values (enabled by "check-nan" feature).
 ///
 /// # Examples
 ///
@@ -159,7 +159,7 @@ pub fn ad_inc(
     input_volume: TAFloat,
     prev_ad: TAFloat,
 ) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_high.is_nan()
             || input_low.is_nan()

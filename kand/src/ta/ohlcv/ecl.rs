@@ -66,7 +66,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// * `KandError::InvalidData` - Input array is empty or too short
 /// * `KandError::LengthMismatch` - Input/output arrays have different lengths
 /// * `KandError::InsufficientData` - Input length <= lookback period
-/// * `KandError::NaNDetected` - Input contains NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -143,7 +143,7 @@ pub fn ecl(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -218,7 +218,7 @@ pub fn ecl(
 /// * `Result<(TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat), KandError>` - Tuple containing (H5,H4,H3,H2,H1,L1,L2,L3,L4,L5)
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - Input contains NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -250,7 +250,7 @@ pub fn ecl_inc(
     ),
     KandError,
 > {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if prev_high.is_nan() || prev_low.is_nan() || prev_close.is_nan() {

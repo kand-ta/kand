@@ -70,7 +70,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If input/output array lengths don't match
 /// * `KandError::InvalidParameter` - If `param_period` is less than 2
 /// * `KandError::InsufficientData` - If input length is less than lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when `check-nan` enabled)
 ///
 /// # Examples
 /// ```
@@ -120,7 +120,7 @@ pub fn midpoint(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for &price in input_price.iter().take(len) {
             if price.is_nan() {
@@ -186,7 +186,7 @@ pub fn midpoint(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If `param_period` is less than 2
-/// * `KandError::NaNDetected` - If any input value is NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when `check-nan` enabled)
 ///
 /// # Examples
 /// ```
@@ -213,7 +213,7 @@ pub const fn midpoint_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_price.is_nan() || prev_highest.is_nan() || prev_lowest.is_nan() {
             return Err(KandError::NaNDetected);

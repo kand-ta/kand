@@ -131,7 +131,7 @@ pub fn sar(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_high[i].is_nan() || input_low[i].is_nan() {
@@ -292,7 +292,7 @@ pub fn sar_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_high.is_nan()
             || input_low.is_nan()

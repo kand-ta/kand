@@ -141,7 +141,7 @@ pub fn t3(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for value in input.iter().take(len) {
             if value.is_nan() {
@@ -361,7 +361,7 @@ pub fn t3_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_price.is_nan()
             || prev_ema1.is_nan()

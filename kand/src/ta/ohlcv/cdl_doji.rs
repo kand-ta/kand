@@ -67,7 +67,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::LengthMismatch` - If input arrays have different lengths
 /// * `KandError::InvalidParameter` - If any parameter is invalid (e.g. <= 0)
-/// * `KandError::NaNDetected` - If any input contains NaN values (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - If any input contains NaN values (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -118,7 +118,7 @@ pub fn cdl_doji(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_open[i].is_nan()
@@ -178,7 +178,7 @@ pub fn cdl_doji(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If any parameter is invalid (e.g. <= 0)
-/// * `KandError::NaNDetected` - If any input value is NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when `check-nan` enabled)
 /// * `KandError::ConversionError` - If numeric conversion fails
 pub fn cdl_doji_inc(
     input_open: TAFloat,
@@ -196,7 +196,7 @@ pub fn cdl_doji_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_open.is_nan() || input_high.is_nan() || input_low.is_nan() || input_close.is_nan()
         {

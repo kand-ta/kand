@@ -68,7 +68,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - Output arrays don't match input length
 /// * `KandError::InvalidParameter` - Period is less than 2
 /// * `KandError::InsufficientData` - Input length is less than required lookback period
-/// * `KandError::NaNDetected` - Input contains NaN values (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN values (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -124,7 +124,7 @@ pub fn tema(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // Check if input contains NaN values
         for value in input {
@@ -191,7 +191,7 @@ pub fn tema(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - Period is less than 2
-/// * `KandError::NaNDetected` - Any input value is NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Any input value is NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -220,7 +220,7 @@ pub fn tema_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input.is_nan() || prev_ema1.is_nan() || prev_ema2.is_nan() || prev_ema3.is_nan() {
             return Err(KandError::NaNDetected);

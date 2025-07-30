@@ -79,7 +79,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * Returns `KandError::LengthMismatch` if arrays have different lengths
 /// * Returns `KandError::InvalidParameter` if period is less than 2
 /// * Returns `KandError::InsufficientData` if input length is less than period
-/// * Returns `KandError::NaNDetected` if input contains NaN values (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if input contains NaN values (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -152,7 +152,7 @@ pub fn correl(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check for both input series
         for i in 0..len {
@@ -282,7 +282,7 @@ pub fn correl(
 ///
 /// # Errors
 /// * Returns `KandError::InvalidParameter` if period is less than 2
-/// * Returns `KandError::NaNDetected` if any input contains NaN (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if any input contains NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -324,7 +324,7 @@ pub fn correl_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check for all inputs
         if input_new_0.is_nan()

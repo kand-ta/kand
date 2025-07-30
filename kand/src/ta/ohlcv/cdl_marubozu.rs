@@ -77,7 +77,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * [`KandError::LengthMismatch`] - Input/output arrays have different lengths
 /// * [`KandError::InvalidParameter`] - Invalid `param_period` (<2) or `param_shadow_percent` (<=0)
 /// * [`KandError::InsufficientData`] - Input length less than required lookback period
-/// * [`KandError::NaNDetected`] - NaN values in input (when `deep-check` enabled)
+/// * [`KandError::NaNDetected`] - NaN values in input (when `check-nan` enabled)
 /// * [`KandError::ConversionError`] - Numeric conversion error
 ///
 /// # Examples
@@ -147,7 +147,7 @@ pub fn cdl_marubozu(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -229,7 +229,7 @@ pub fn cdl_marubozu(
 ///
 /// # Errors
 /// * [`KandError::InvalidParameter`] - If `param_period` < 2 or `param_shadow_percent` <= 0
-/// * [`KandError::NaNDetected`] - If any input contains NaN (when `deep-check` feature is enabled)
+/// * [`KandError::NaNDetected`] - If any input contains NaN (when `check-nan` feature is enabled)
 /// * [`KandError::ConversionError`] - If numeric conversion fails
 ///
 /// # Examples
@@ -267,7 +267,7 @@ pub fn cdl_marubozu_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_open.is_nan()

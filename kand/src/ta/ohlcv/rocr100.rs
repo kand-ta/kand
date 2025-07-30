@@ -62,7 +62,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths
 /// * `KandError::InvalidParameter` - If `param_period` is less than 2
 /// * `KandError::InsufficientData` - If input length is less than or equal to lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -102,7 +102,7 @@ pub fn rocr100(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_price {
             if price.is_nan() {
@@ -138,7 +138,7 @@ pub fn rocr100(
 /// * `Result<TAFloat, KandError>` - The calculated ROCR100 value
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -152,7 +152,7 @@ pub fn rocr100(
 /// // Result shows current price is 125% of price 10 periods ago
 /// ```
 pub fn rocr100_inc(input: TAFloat, prev: TAFloat) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input.is_nan() || prev.is_nan() {
             return Err(KandError::NaNDetected);

@@ -58,7 +58,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * Returns `KandError::LengthMismatch` if output length doesn't match input
 /// * Returns `KandError::InvalidParameter` if period is less than 2
 /// * Returns `KandError::InsufficientData` if input length is less than period
-/// * Returns `KandError::NaNDetected` if any input value is NaN (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if any input value is NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -101,7 +101,7 @@ pub fn max(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         for price in input_prices {
@@ -146,7 +146,7 @@ pub fn max(
 ///
 /// # Errors
 /// * Returns `KandError::InvalidParameter` if period is less than 2
-/// * Returns `KandError::NaNDetected` if any input value is NaN (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if any input value is NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -173,7 +173,7 @@ pub fn max_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_price.is_nan() || prev_max.is_nan() || input_old_price.is_nan() {

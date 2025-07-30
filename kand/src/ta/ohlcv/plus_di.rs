@@ -77,7 +77,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
 /// * `KandError::InvalidParameter` - If period < 2
 /// * `KandError::InsufficientData` - If input length <= lookback period
-/// * `KandError::NaNDetected` - If any input contains NaN (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If any input contains NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -137,7 +137,7 @@ pub fn plus_di(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -260,7 +260,7 @@ pub fn plus_di(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If period < 2
-/// * `KandError::NaNDetected` - If any input contains NaN (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If any input contains NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -296,7 +296,7 @@ pub fn plus_di_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_high.is_nan()

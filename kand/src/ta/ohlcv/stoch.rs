@@ -81,7 +81,7 @@ pub const fn lookback(
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
 /// * `KandError::InvalidParameter` - If any period parameter is less than 2
 /// * `KandError::InsufficientData` - If input length is less than required lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -148,7 +148,7 @@ pub fn stoch(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check

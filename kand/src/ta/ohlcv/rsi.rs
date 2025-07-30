@@ -75,7 +75,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths
 /// * `KandError::InvalidParameter` - If `param_period` is less than 2
 /// * `KandError::InsufficientData` - If input length is less than or equal to lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -124,7 +124,7 @@ pub fn rsi(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_prices {
             // NaN check
@@ -227,7 +227,7 @@ pub fn rsi(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If `param_period` is less than 2
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -257,7 +257,7 @@ pub fn rsi_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_curr_price.is_nan()

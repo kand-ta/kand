@@ -66,7 +66,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If output array length != input array length
 /// * `KandError::InvalidParameter` - If `param_period` < 2
 /// * `KandError::InsufficientData` - If input length < lookback period
-/// * `KandError::NaNDetected` - If any input price is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input price is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -105,7 +105,7 @@ pub fn mom(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         for price in input_prices {
@@ -142,7 +142,7 @@ pub fn mom(
 /// * `Result<TAFloat, KandError>` - The calculated momentum value on success, or error on failure
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - If any input price is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input price is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -157,7 +157,7 @@ pub fn mom_inc(
     input_current_price: TAFloat,
     input_old_price: TAFloat,
 ) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_current_price.is_nan() || input_old_price.is_nan() {
             return Err(KandError::NaNDetected);

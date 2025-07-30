@@ -64,7 +64,7 @@ pub fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths (with "check" feature)
 /// * `KandError::InvalidParameter` - If `param_period` < 2 (with "check" feature)
 /// * `KandError::InsufficientData` - If input length <= lookback period (with "check" feature)
-/// * `KandError::NaNDetected` - If input contains NaN values (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If input contains NaN values (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -112,7 +112,7 @@ pub fn trix(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for value in input {
             if value.is_nan() {
@@ -186,7 +186,7 @@ pub fn trix(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If `param_period` < 2 (with "check" feature)
-/// * `KandError::NaNDetected` - If any input value is NaN (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If any input value is NaN (with "`check-nan`" feature)
 /// * `KandError::InvalidData` - If division by zero occurs during ROC calculation
 ///
 /// # Example
@@ -216,7 +216,7 @@ pub fn trix_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input.is_nan() || prev_ema1.is_nan() || prev_ema2.is_nan() || prev_ema3.is_nan() {
             return Err(KandError::NaNDetected);

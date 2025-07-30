@@ -64,7 +64,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * Returns `KandError::LengthMismatch` if output length doesn't match input
 /// * Returns `KandError::InvalidParameter` if period is less than 2
 /// * Returns `KandError::InsufficientData` if input length is less than period
-/// * Returns `KandError::NaNDetected` if any input value is NaN (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if any input value is NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -107,7 +107,7 @@ pub fn min(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         for price in input_prices {
@@ -152,7 +152,7 @@ pub fn min(
 ///
 /// # Errors
 /// * Returns `KandError::InvalidParameter` if period is less than 2
-/// * Returns `KandError::NaNDetected` if any input value is NaN (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if any input value is NaN (with "`check-nan`" feature)
 /// * Returns `KandError::InsufficientData` if full recalculation is needed
 ///
 /// # Example
@@ -180,7 +180,7 @@ pub fn min_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_price.is_nan() || prev_min.is_nan() || prev_price.is_nan() {

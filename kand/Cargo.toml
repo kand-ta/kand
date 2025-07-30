@@ -4,7 +4,7 @@ version = "0.2.2"
 edition = "2024"
 authors = ["CtrlX <gitctrlx@gmail.com>"]
 readme = "../README.md"
-description = "Kand: A Pure Rust technical analysis library inspired by TA-Lib."
+description = "Kand: A Modern, High-Performance Technical Analysis Library."
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/rust-ta/kand"
 documentation = "https://docs.rs/kand"
@@ -28,10 +28,11 @@ name = "bench_main"
 harness = false
 
 [features]
-default = ["f64", "i64", "check"]     # Default: extended precision with basic checks
-f32 = []                           # 32-bit floating point
-f64 = []                           # 64-bit floating point
-i32 = []                           # 32-bit integer
-i64 = []                           # 64-bit integer
-check = []                         # Basic validation checks
-deep-check = ["check"]             # Extended validation checks
+default = ["f64", "i64"]     # Default: extended precision with basic checks
+f32 = []                              # 32-bit floating point
+f64 = []                              # 64-bit floating point
+i32 = []                              # 32-bit integer
+i64 = []                              # 64-bit integer
+check = []                            # Basic validation checks
+check-nan = []                        # Check for NaN values in input data
+allow-nan = []                        # Allow NaN values in output data

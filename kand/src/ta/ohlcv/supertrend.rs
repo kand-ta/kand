@@ -89,7 +89,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - Input/output arrays have different lengths
 /// * `KandError::InvalidParameter` - Invalid `param_period` (<2)
 /// * `KandError::InsufficientData` - Input length less than required lookback
-/// * `KandError::NaNDetected` - NaN values in input (with `deep-check` feature)
+/// * `KandError::NaNDetected` - NaN values in input (with `check-nan` feature)
 /// * `KandError::ConversionError` - Numeric conversion error
 pub fn supertrend(
     input_high: &[TAFloat],
@@ -131,7 +131,7 @@ pub fn supertrend(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         for i in 0..len {
@@ -259,7 +259,7 @@ pub fn supertrend(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - Invalid `param_period` (<2)
-/// * `KandError::NaNDetected` - NaN values in input (with `deep-check` feature)
+/// * `KandError::NaNDetected` - NaN values in input (with `check-nan` feature)
 /// * `KandError::ConversionError` - Numeric conversion error
 pub fn supertrend_inc(
     input_high: TAFloat,
@@ -280,7 +280,7 @@ pub fn supertrend_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_high.is_nan()
             || input_low.is_nan()

@@ -60,7 +60,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// # Errors
 /// * [`KandError::LengthMismatch`] - If input arrays have different lengths
 /// * [`KandError::InvalidParameter`] - If `param_body_percent` is less than or equal to zero
-/// * [`KandError::NaNDetected`] - If any input contains NaN values (when `deep-check` feature enabled)
+/// * [`KandError::NaNDetected`] - If any input contains NaN values (when `check-nan` feature enabled)
 ///
 /// # Examples
 /// ```
@@ -109,7 +109,7 @@ pub fn cdl_dragonfly_doji(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_open[i].is_nan()
@@ -162,7 +162,7 @@ pub fn cdl_dragonfly_doji(
 ///
 /// # Errors
 /// * [`KandError::InvalidParameter`] - If `param_body_percent` is less than or equal to zero
-/// * [`KandError::NaNDetected`] - If any input value is NaN (when `deep-check` feature enabled)
+/// * [`KandError::NaNDetected`] - If any input value is NaN (when `check-nan` feature enabled)
 /// * [`KandError::ConversionError`] - If numeric conversion fails
 ///
 /// # Examples
@@ -193,7 +193,7 @@ pub fn cdl_dragonfly_doji_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_open.is_nan() || input_high.is_nan() || input_low.is_nan() || input_close.is_nan()
         {

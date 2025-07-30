@@ -66,7 +66,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If output length doesn't match input
 /// * `KandError::InvalidParameter` - If period < 2
 /// * `KandError::InsufficientData` - If input length < period
-/// * `KandError::NaNDetected` - If any input price is NaN (with "`deep-check`")
+/// * `KandError::NaNDetected` - If any input price is NaN (with "`check-nan`")
 ///
 /// # Example
 /// ```
@@ -105,7 +105,7 @@ pub fn ema(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_prices {
             // NaN check
@@ -167,7 +167,7 @@ pub fn ema(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If period < 2
-/// * `KandError::NaNDetected` - If price or previous EMA is NaN (with "`deep-check`")
+/// * `KandError::NaNDetected` - If price or previous EMA is NaN (with "`check-nan`")
 ///
 /// # Example
 /// ```
@@ -193,7 +193,7 @@ pub fn ema_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_price.is_nan() || prev_ema.is_nan() {

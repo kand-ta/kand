@@ -73,7 +73,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths
 /// * `KandError::InvalidParameter` - If `param_period` < 2
 /// * `KandError::InsufficientData` - If input length <= lookback period
-/// * `KandError::NaNDetected` - If any input contains NaN (when "`deep-check`" enabled)
+/// * `KandError::NaNDetected` - If any input contains NaN (when "`check-nan`" enabled)
 ///
 /// # Example
 /// ```
@@ -137,7 +137,7 @@ pub fn aroonosc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_high[i].is_nan() || input_low[i].is_nan() {
@@ -218,7 +218,7 @@ pub fn aroonosc(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If `param_period` < 2 (when "check" enabled)
-/// * `KandError::NaNDetected` - If any input is NaN (when "`deep-check`" enabled)
+/// * `KandError::NaNDetected` - If any input is NaN (when "`check-nan`" enabled)
 ///
 /// # Example
 /// ```
@@ -251,7 +251,7 @@ pub fn aroonosc_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_high.is_nan() || input_low.is_nan() || prev_high.is_nan() || prev_low.is_nan() {
             return Err(KandError::NaNDetected);

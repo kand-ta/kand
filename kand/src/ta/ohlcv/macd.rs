@@ -84,7 +84,7 @@ pub fn lookback(
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
 /// * `KandError::InvalidParameter` - If any period is 0 or `fast_period` >= `slow_period`
 /// * `KandError::InsufficientData` - If input length < required lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If any input value is NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -152,7 +152,7 @@ pub fn macd(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_price {
             // NaN check
@@ -223,7 +223,7 @@ pub fn macd(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If any period is 0 or `fast_period` >= `slow_period`
-/// * `KandError::NaNDetected` - If any input value is NaN (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If any input value is NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -260,7 +260,7 @@ pub fn macd_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_price.is_nan()

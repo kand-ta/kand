@@ -62,7 +62,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * Returns `KandError::LengthMismatch` if output length doesn't match input
 /// * Returns `KandError::InvalidParameter` if period is less than 2
 /// * Returns `KandError::InsufficientData` if input length is less than period
-/// * Returns `KandError::NaNDetected` if input contains NaN values (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if input contains NaN values (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -105,7 +105,7 @@ pub fn sum(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         for price in input_prices {
@@ -150,7 +150,7 @@ pub fn sum(
 /// * `Result<TAFloat, KandError>` - The new sum value on success, or error on failure
 ///
 /// # Errors
-/// * Returns `KandError::NaNDetected` if any input contains NaN (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if any input contains NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -167,7 +167,7 @@ pub fn sum_inc(
     input_old_price: TAFloat,
     prev_sum: TAFloat,
 ) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_new_price.is_nan() || input_old_price.is_nan() || prev_sum.is_nan() {

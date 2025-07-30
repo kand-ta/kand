@@ -75,7 +75,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * [`KandError::LengthMismatch`] - If input arrays have different lengths
 /// * [`KandError::InvalidParameter`] - If parameter values are invalid
 /// * [`KandError::InsufficientData`] - If input length is less than required lookback
-/// * [`KandError::NaNDetected`] - If input contains NaN values (when `deep-check` enabled)
+/// * [`KandError::NaNDetected`] - If input contains NaN values (when `check-nan` enabled)
 ///
 /// # Examples
 /// ```
@@ -142,7 +142,7 @@ pub fn cdl_hammer(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_open[i].is_nan()
@@ -212,7 +212,7 @@ pub fn cdl_hammer(
 /// * [`KandError::InvalidParameter`] - If parameters are invalid:
 ///   - `param_period` is less than 2
 ///   - `param_factor` is less than or equal to zero
-/// * [`KandError::NaNDetected`] - If any input value is NaN (when `deep-check` enabled)
+/// * [`KandError::NaNDetected`] - If any input value is NaN (when `check-nan` enabled)
 /// * [`KandError::ConversionError`] - If numeric conversion fails
 ///
 /// # Examples
@@ -248,7 +248,7 @@ pub fn cdl_hammer_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_open.is_nan()
             || input_high.is_nan()

@@ -147,7 +147,7 @@ pub fn bbands(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_price {
             if price.is_nan() {
@@ -258,7 +258,7 @@ pub fn bbands_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_price.is_nan()
             || prev_sma.is_nan()

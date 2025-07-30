@@ -46,7 +46,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths
-/// * `KandError::NaNDetected` - If input contains NaN values (with "`deep-check`")
+/// * `KandError::NaNDetected` - If input contains NaN values (with "`check-nan`")
 ///
 /// # Example
 /// ```
@@ -107,7 +107,7 @@ pub fn ha(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         for i in 0..len {
@@ -173,7 +173,7 @@ pub fn ha(
 /// * `Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError>` - Tuple of (`HA_Open`, `HA_High`, `HA_Low`, `HA_Close`) if successful
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - If any input is NaN (with "`deep-check`")
+/// * `KandError::NaNDetected` - If any input is NaN (with "`check-nan`")
 ///
 /// # Example
 /// ```
@@ -197,7 +197,7 @@ pub fn ha_inc(
     prev_ha_open: TAFloat,
     prev_ha_close: TAFloat,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if curr_open.is_nan()

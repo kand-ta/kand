@@ -71,7 +71,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - Output arrays don't match input length
 /// * `KandError::InvalidParameter` - Period is less than 2
 /// * `KandError::InsufficientData` - Input length is less than required lookback period
-/// * `KandError::NaNDetected` - Input contains NaN values (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN values (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -111,7 +111,7 @@ pub fn trima(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for value in input.iter().take(len) {
             if value.is_nan() {
@@ -195,7 +195,7 @@ pub fn trima(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - Period is less than 2
-/// * `KandError::NaNDetected` - Input contains NaN values (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN values (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -227,7 +227,7 @@ pub fn trima_inc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if prev_sma1.is_nan()
             || prev_sma2.is_nan()

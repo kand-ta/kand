@@ -1,20 +1,23 @@
 use crate::{KandError, TAFloat, TAPeriod};
 
-/// Returns the lookback period required for Simple Moving Average (SMA) calculation.
+/// Returns the lookback period for Simple Moving Average (SMA) without input validation.
 ///
-/// The lookback period is the number of data points needed before the first valid SMA value, equal to the period minus one.
+/// Assumes valid inputs; returns `param_period - 1`.
+///
+/// # Panics
+///
+/// Panics in debug builds if `param_period < 1` due to subtraction overflow.
+#[inline]
+#[must_use]
+pub const fn lookback_raw(param_period: TAPeriod) -> TAPeriod {
+    param_period - 1
+}
+
+/// Returns the lookback period for SMA calculation (`param_period - 1`).
 ///
 /// # Errors
 ///
-/// - [`KandError::InvalidParameter`] if period is less than 2 (enabled by "check" feature).
-///
-/// # Examples
-///
-/// ```
-/// use kand::ohlcv::sma;
-/// let lookback = sma::lookback(14).unwrap();
-/// assert_eq!(lookback, 13);
-/// ```
+/// Returns [`KandError::InvalidParameter`] if `param_period < 2` (with "check" feature).
 #[must_use]
 pub const fn lookback(param_period: TAPeriod) -> Result<TAPeriod, KandError> {
     #[cfg(feature = "check")]
@@ -26,47 +29,48 @@ pub const fn lookback(param_period: TAPeriod) -> Result<TAPeriod, KandError> {
     Ok(param_period - 1)
 }
 
-/// Calculates the Simple Moving Average (SMA) for the entire price series.
+/// Computes SMA without input validation for high performance.
 ///
-/// The SMA smooths price data by computing the arithmetic mean over a specified period, commonly used to identify trends.
+/// Sums prices over `param_period` and divides by period length.
+/// Stores results in `output`, leaving first `lookback` values unset.
 ///
-/// # Formula
+/// # Assumptions
 ///
-/// ```text
-/// SMA = (P1 + P2 + ... + Pn) / n
-/// ```
+/// - `input` and `output` have equal length and sufficient data.
+/// - Inputs are valid; no error checking performed.
+pub fn sma_raw(input: &[TAFloat], param_period: TAPeriod, output: &mut [TAFloat]) {
+    let len = input.len();
+    let lookback = lookback_raw(param_period);
+
+    let mut sum = input.iter().take(param_period).sum::<TAFloat>();
+    let period_float = param_period as TAFloat; // TODO: Safely convert TAPeriod to TAFloat
+    output[lookback] = sum / period_float;
+
+    for i in lookback + 1..len {
+        sum = sum + input[i] - input[i - param_period];
+        output[i] = sum / period_float;
+    }
+}
+
+/// Computes SMA over a price series, smoothing data to identify trends.
 ///
-/// Where `P1, P2, ..., Pn` are the input values, and `n` is the period.
-///
-/// # Calculation
-///
-/// 1. Sum the prices over the period.
-/// 2. Divide by the period to compute the mean.
-/// 3. Slide the window forward and repeat.
-/// 4. Set the first `period - 1` values to NaN, as they lack sufficient data.
+/// Formula: `SMA = (P1 + P2 + ... + Pn) / n`, where `n` is `param_period`.
+/// Sets first `period - 1` output values to NaN (with "allow-nan" feature).
 ///
 /// # Errors
 ///
-/// - [`KandError::InvalidData`] if input is empty (enabled by "check" feature).
-/// - [`KandError::LengthMismatch`] if input and output lengths differ (enabled by "check" feature).
-/// - [`KandError::InvalidParameter`] if period is less than 2 (propagated from lookback).
-/// - [`KandError::InsufficientData`] if input length is less than or equal to lookback (enabled by "check" feature).
-/// - [`KandError::NaNDetected`] if any input contains NaN values (enabled by "check-nan" feature).
+/// With "check" feature:
+/// - [`KandError::InvalidData`] if `input` is empty.
+/// - [`KandError::LengthMismatch`] if `input` and `output` lengths differ.
+/// - [`KandError::InsufficientData`] if `input.len() <= lookback`.
+/// - [`KandError::InvalidParameter`] from `lookback`.
 ///
-/// # Examples
-///
-/// ```
-/// use kand::ohlcv::sma;
-/// let prices = vec![2.0, 4.0, 6.0, 8.0, 10.0];
-/// let period = 3;
-/// let mut sma_values = vec![0.0; 5];
-///
-/// sma::sma(&prices, period, &mut sma_values).unwrap();
-/// ```
+/// With "check-nan" feature:
+/// - [`KandError::NaNDetected`] if any input is NaN.
 pub fn sma(
     input: &[TAFloat],
     param_period: TAPeriod,
-    output_sma: &mut [TAFloat],
+    output: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input.len();
     let lookback = lookback(param_period)?;
@@ -76,12 +80,10 @@ pub fn sma(
         if len == 0 {
             return Err(KandError::InvalidData);
         }
-
         if len <= lookback {
             return Err(KandError::InsufficientData);
         }
-
-        if output_sma.len() != len {
+        if output.len() != len {
             return Err(KandError::LengthMismatch);
         }
     }
@@ -93,18 +95,11 @@ pub fn sma(
         }
     }
 
-    let mut sum = input.iter().take(param_period).sum::<TAFloat>();
-    let period_float = param_period as TAFloat; // TODO: find a safe way to convert TAPeriod to TAFloat
-    output_sma[lookback] = sum / period_float;
-
-    for i in lookback + 1..len {
-        sum = sum + input[i] - input[i - param_period];
-        output_sma[i] = sum / period_float;
-    }
+    sma_raw(input, param_period, output);
 
     #[cfg(feature = "allow-nan")]
     {
-        for value in output_sma.iter_mut().take(lookback) {
+        for value in output.iter_mut().take(lookback) {
             *value = TAFloat::NAN;
         }
     }
@@ -112,38 +107,40 @@ pub fn sma(
     Ok(())
 }
 
-/// Calculates the next SMA value incrementally using the previous SMA value.
+/// Computes the next SMA value incrementally without input validation.
 ///
-/// This optimized version computes only the latest SMA value, avoiding recalculation of the entire series.
+/// Formula: `Latest SMA = Previous SMA + (New Price - Old Price) / period`.
 ///
-/// # Formula
+/// # Assumptions
 ///
-/// ```text
-/// Latest SMA = Previous SMA + (New Price - Old Price) / period
-/// ```
+/// Inputs are valid; no error checking performed.
+#[must_use]
+pub fn sma_inc_raw(
+    prev_sma: TAFloat,
+    input: TAFloat,
+    prev_input: TAFloat,
+    param_period: TAPeriod,
+) -> TAFloat {
+    prev_sma + (input - prev_input) / param_period as TAFloat // TODO: Safely convert TAPeriod to TAFloat
+}
+
+/// Computes the next SMA value incrementally using the previous SMA.
+///
+/// Formula: `Latest SMA = Previous SMA + (New Price - Old Price) / period`.
 ///
 /// # Errors
 ///
-/// - [`KandError::InvalidParameter`] if period is less than 2 (enabled by "check" feature).
-/// - [`KandError::NaNDetected`] if any input contains NaN values (enabled by "check-nan" feature).
+/// With "check" feature:
+/// - [`KandError::InvalidParameter`] if `param_period < 2`.
 ///
-/// # Examples
-///
-/// ```
-/// use kand::ohlcv::sma;
-/// let prev_sma = 4.0;
-/// let new_price = 10.0;
-/// let old_price = 2.0;
-/// let period = 3;
-///
-/// let next_sma = sma::sma_inc(prev_sma, new_price, old_price, period).unwrap();
-/// ```
+/// With "check-nan" feature:
+/// - [`KandError::NaNDetected`] if any input is NaN.
 #[must_use]
 pub fn sma_inc(
     prev_sma: TAFloat,
-    input_new_price: TAFloat,
-    input_old_price: TAFloat,
-    param_period: usize,
+    input: TAFloat,
+    prev_input: TAFloat,
+    param_period: TAPeriod,
 ) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
@@ -154,12 +151,12 @@ pub fn sma_inc(
 
     #[cfg(feature = "check-nan")]
     {
-        if prev_sma.is_nan() || input_new_price.is_nan() || input_old_price.is_nan() {
+        if prev_sma.is_nan() || input.is_nan() || prev_input.is_nan() {
             return Err(KandError::NaNDetected);
         }
     }
 
-    Ok(prev_sma + (input_new_price - input_old_price) / param_period as TAFloat) // TODO: find a safe way to convert TAPeriod to TAFloat
+    Ok(sma_inc_raw(prev_sma, input, prev_input, param_period))
 }
 
 #[cfg(test)]
@@ -200,24 +197,24 @@ mod tests {
     #[test]
     #[cfg(feature = "allow-nan")]
     fn test_sma_with_nan() {
-        let mut output_sma = vec![0.0; INPUT_DATA.len()];
-        sma(&INPUT_DATA, PERIOD, &mut output_sma).unwrap();
+        let mut output = vec![0.0; INPUT_DATA.len()];
+        sma(&INPUT_DATA, PERIOD, &mut output).unwrap();
 
-        // Check that initial values are NaN
-        for &val in output_sma.iter().take(LOOKBACK) {
+        // Verify initial values are NaN
+        for &val in output.iter().take(LOOKBACK) {
             assert!(val.is_nan());
         }
 
-        // Check the calculated SMA values
+        // Verify calculated SMA values
         for (i, &expected) in EXPECTED_VALUES.iter().enumerate() {
-            assert_relative_eq!(output_sma[LOOKBACK + i], expected, epsilon = EPSILON);
+            assert_relative_eq!(output[LOOKBACK + i], expected, epsilon = EPSILON);
         }
 
-        // Check incremental calculation
-        let mut prev_sma = output_sma[LOOKBACK];
+        // Verify incremental calculation
+        let mut prev_sma = output[LOOKBACK];
         for i in (LOOKBACK + 1)..INPUT_DATA.len() {
             let result = sma_inc(prev_sma, INPUT_DATA[i], INPUT_DATA[i - PERIOD], PERIOD).unwrap();
-            assert_relative_eq!(result, output_sma[i], epsilon = EPSILON);
+            assert_relative_eq!(result, output[i], epsilon = EPSILON);
             prev_sma = result;
         }
     }
@@ -226,24 +223,24 @@ mod tests {
     #[test]
     #[cfg(not(feature = "allow-nan"))]
     fn test_sma_without_nan() {
-        let mut output_sma = vec![0.0; INPUT_DATA.len()];
-        sma(&INPUT_DATA, PERIOD, &mut output_sma).unwrap();
+        let mut output = vec![0.0; INPUT_DATA.len()];
+        sma(&INPUT_DATA, PERIOD, &mut output).unwrap();
 
-        // Check that initial values are 0.0
-        for &val in output_sma.iter().take(LOOKBACK) {
+        // Verify initial values are 0.0
+        for &val in output.iter().take(LOOKBACK) {
             assert_eq!(val, 0.0);
         }
 
-        // Check the calculated SMA values
+        // Verify calculated SMA values
         for (i, &expected) in EXPECTED_VALUES.iter().enumerate() {
-            assert_relative_eq!(output_sma[LOOKBACK + i], expected, epsilon = EPSILON);
+            assert_relative_eq!(output[LOOKBACK + i], expected, epsilon = EPSILON);
         }
 
-        // Check incremental calculation
-        let mut prev_sma = output_sma[LOOKBACK];
+        // Verify incremental calculation
+        let mut prev_sma = output[LOOKBACK];
         for i in (LOOKBACK + 1)..INPUT_DATA.len() {
             let result = sma_inc(prev_sma, INPUT_DATA[i], INPUT_DATA[i - PERIOD], PERIOD).unwrap();
-            assert_relative_eq!(result, output_sma[i], epsilon = EPSILON);
+            assert_relative_eq!(result, output[i], epsilon = EPSILON);
             prev_sma = result;
         }
     }

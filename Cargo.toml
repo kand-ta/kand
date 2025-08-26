@@ -20,7 +20,7 @@ rust_decimal = "1.36.0"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.141"
 kand = { path = "./kand", default-features = false, features = ["f64", "i64", "check"] }
-thiserror = "2.0.12"
+thiserror = "2.0.16"
 
 
 [profile.release]

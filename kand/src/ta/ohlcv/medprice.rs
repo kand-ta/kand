@@ -50,7 +50,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - Input arrays are empty
 /// * `KandError::LengthMismatch` - Input arrays have different lengths
-/// * `KandError::NaNDetected` - Input contains NaN values (when "`deep-check`" feature enabled)
+/// * `KandError::NaNDetected` - Input contains NaN values (when "`check-nan`" feature enabled)
 ///
 /// # Example
 /// ```
@@ -83,7 +83,7 @@ pub fn medprice(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_high[i].is_nan() || input_low[i].is_nan() {
@@ -113,7 +113,7 @@ pub fn medprice(
 /// * `Result<TAFloat, KandError>` - Returns calculated median price on success
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - Input contains NaN values (when "`deep-check`" feature enabled)
+/// * `KandError::NaNDetected` - Input contains NaN values (when "`check-nan`" feature enabled)
 ///
 /// # Example
 /// ```
@@ -125,7 +125,7 @@ pub fn medprice(
 /// assert_eq!(result, 9.0);
 /// ```
 pub const fn medprice_inc(input_high: TAFloat, input_low: TAFloat) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_high.is_nan() || input_low.is_nan() {
             return Err(KandError::NaNDetected);

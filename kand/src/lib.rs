@@ -59,7 +59,7 @@
 //!
 //! ### Validation
 //! - `check`: Enable basic validation checks
-//! - `deep-check = ["check"]`: Enable extended validation (includes basic checks)
+//! - `check-nan = ["check"]`: Enable extended validation (includes basic checks)
 //!
 //! ## Safety and Error Handling
 //!
@@ -70,7 +70,7 @@
 //! - `InvalidData`: Empty or invalid input data
 //! - `LengthMismatch`: Input and output slice lengths don't match
 //! - `InsufficientData`: Not enough data points for calculation
-//! - `NaNDetected`: NaN values in input data (with `deep-check` feature)
+//! - `NaNDetected`: NaN values in input data (with `check-nan` feature)
 //!
 //! ## Performance Considerations
 //!
@@ -124,6 +124,20 @@ pub type TAInt = i32;
 #[cfg(not(all(feature = "i32", not(feature = "i64"))))]
 pub type TAInt = i64; // Default to i64 when no features are enabled
 
+/// Default type for indicator periods.
+///
+/// This is consistently `usize` across the library to represent time periods,
+/// lookback windows, and other count-based parameters.
+pub type TAPeriod = usize;
+
 /// Global EPSILON value used for floating-point comparisons
 /// to account for rounding errors in calculations.
-pub const EPSILON: TAFloat = 0.000_000_000_1; // 10^-10
+///
+/// This value is automatically set based on the floating-point type:
+/// - f32: Uses f32::EPSILON (≈ 1.19e-7)
+/// - f64: Uses f64::EPSILON (≈ 2.22e-16)
+#[cfg(all(feature = "f32", not(feature = "f64")))]
+pub const EPSILON: TAFloat = f32::EPSILON;
+
+#[cfg(not(all(feature = "f32", not(feature = "f64"))))]
+pub const EPSILON: TAFloat = f64::EPSILON;

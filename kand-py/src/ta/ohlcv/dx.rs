@@ -95,7 +95,7 @@ pub fn dx_py(
 ///     prev_smoothed_plus_dm (float): Previous smoothed +DM value.
 ///     prev_smoothed_minus_dm (float): Previous smoothed -DM value.
 ///     prev_smoothed_tr (float): Previous smoothed TR value.
-///     param_period (int): Period for DX calculation (typically 14).
+///     opt_period (int): Period for DX calculation (typically 14).
 ///
 /// Returns:
 ///     tuple: A tuple containing:
@@ -126,7 +126,7 @@ pub fn dx_py(
     prev_smoothed_plus_dm,
     prev_smoothed_minus_dm,
     prev_smoothed_tr,
-    param_period
+    opt_period
 ))]
 pub fn dx_inc_py(
     py: Python,
@@ -138,7 +138,7 @@ pub fn dx_inc_py(
     prev_smoothed_plus_dm: TAFloat,
     prev_smoothed_minus_dm: TAFloat,
     prev_smoothed_tr: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> PyResult<(TAFloat, TAFloat, TAFloat, TAFloat)> {
     // Perform the incremental DX calculation while releasing the GIL
     py.allow_threads(|| {
@@ -151,7 +151,7 @@ pub fn dx_inc_py(
             prev_smoothed_plus_dm,
             prev_smoothed_minus_dm,
             prev_smoothed_tr,
-            param_period,
+            opt_period,
         )
     })
     .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))

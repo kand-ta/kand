@@ -7,7 +7,7 @@ use crate::{KandError, TAFloat, ta::ohlcv::ema};
 /// can be calculated. For TEMA, this equals 3 * (period - 1) due to the triple EMA calculation process.
 ///
 /// # Arguments
-/// * `param_period` - The smoothing period used for TEMA calculation. Must be >= 2.
+/// * `opt_period` - The smoothing period used for TEMA calculation. Must be >= 2.
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The required lookback period if successful
@@ -22,14 +22,14 @@ use crate::{KandError, TAFloat, ta::ohlcv::ema};
 /// let lookback = tema::lookback(period).unwrap();
 /// assert_eq!(lookback, 39); // 3 * (14 - 1)
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(3 * (param_period - 1))
+    Ok(3 * (opt_period - 1))
 }
 
 /// Calculates Triple Exponential Moving Average (TEMA) for a price series
@@ -54,7 +54,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input` - Slice of input price values
-/// * `param_period` - Smoothing period for calculations (must be >= 2)
+/// * `opt_period` - Smoothing period for calculations (must be >= 2)
 /// * `output_tema` - Mutable slice to store TEMA results (first lookback values will be NaN)
 /// * `output_ema1` - Mutable slice to store first EMA series
 /// * `output_ema2` - Mutable slice to store second EMA series
@@ -68,7 +68,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - Output arrays don't match input length
 /// * `KandError::InvalidParameter` - Period is less than 2
 /// * `KandError::InsufficientData` - Input length is less than required lookback period
-/// * `KandError::NaNDetected` - Input contains NaN values (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN values (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -93,14 +93,14 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn tema(
     input: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_tema: &mut [TAFloat],
     output_ema1: &mut [TAFloat],
     output_ema2: &mut [TAFloat],
     output_ema3: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -124,7 +124,7 @@ pub fn tema(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // Check if input contains NaN values
         for value in input {
@@ -135,22 +135,22 @@ pub fn tema(
     }
 
     // Calculate first EMA series
-    ema::ema(input, param_period, None, output_ema1)?;
+    ema::ema(input, opt_period, None, output_ema1)?;
 
     // Calculate second EMA series using valid values from first EMA
     ema::ema(
-        &output_ema1[param_period - 1..],
-        param_period,
+        &output_ema1[opt_period - 1..],
+        opt_period,
         None,
-        &mut output_ema2[param_period - 1..],
+        &mut output_ema2[opt_period - 1..],
     )?;
 
     // Calculate third EMA series
     ema::ema(
-        &output_ema2[2 * (param_period - 1)..],
-        param_period,
+        &output_ema2[2 * (opt_period - 1)..],
+        opt_period,
         None,
-        &mut output_ema3[2 * (param_period - 1)..],
+        &mut output_ema3[2 * (opt_period - 1)..],
     )?;
 
     // Calculate TEMA and store it in the output array (valid only after lookback)
@@ -180,7 +180,7 @@ pub fn tema(
 /// * `prev_ema1` - Previous value of first EMA
 /// * `prev_ema2` - Previous value of second EMA
 /// * `prev_ema3` - Previous value of third EMA
-/// * `param_period` - Smoothing period for calculations (must be >= 2)
+/// * `opt_period` - Smoothing period for calculations (must be >= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing:
@@ -191,7 +191,7 @@ pub fn tema(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - Period is less than 2
-/// * `KandError::NaNDetected` - Any input value is NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Any input value is NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -211,25 +211,25 @@ pub fn tema_inc(
     prev_ema1: TAFloat,
     prev_ema2: TAFloat,
     prev_ema3: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input.is_nan() || prev_ema1.is_nan() || prev_ema2.is_nan() || prev_ema3.is_nan() {
             return Err(KandError::NaNDetected);
         }
     }
 
-    let ema1 = ema::ema_inc(input, prev_ema1, param_period, None)?;
-    let ema2 = ema::ema_inc(ema1, prev_ema2, param_period, None)?;
-    let ema3 = ema::ema_inc(ema2, prev_ema3, param_period, None)?;
+    let ema1 = ema::ema_inc(input, prev_ema1, opt_period, None)?;
+    let ema2 = ema::ema_inc(ema1, prev_ema2, opt_period, None)?;
+    let ema3 = ema::ema_inc(ema2, prev_ema3, opt_period, None)?;
     let tema = 3.0f64.mul_add(ema1, -(3.0 * ema2)) + ema3;
 
     Ok((tema, ema1, ema2, ema3))
@@ -248,7 +248,7 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6,
         ];
-        let param_period = 3;
+        let opt_period = 3;
         let mut output_tema = vec![0.0; input.len()];
         let mut ema1 = vec![0.0; input.len()];
         let mut ema2 = vec![0.0; input.len()];
@@ -256,7 +256,7 @@ mod tests {
 
         tema(
             &input,
-            param_period,
+            opt_period,
             &mut output_tema,
             &mut ema1,
             &mut ema2,
@@ -298,7 +298,7 @@ mod tests {
 
         for i in 11..15 {
             let (tema_val, new_ema1, new_ema2, new_ema3) =
-                tema_inc(input[i], prev_ema1, prev_ema2, prev_ema3, param_period).unwrap();
+                tema_inc(input[i], prev_ema1, prev_ema2, prev_ema3, opt_period).unwrap();
 
             assert_relative_eq!(tema_val, output_tema[i], epsilon = 0.0001);
             assert_relative_eq!(new_ema1, ema1[i], epsilon = 0.0001);

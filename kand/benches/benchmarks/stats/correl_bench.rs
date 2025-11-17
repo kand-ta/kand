@@ -1,7 +1,8 @@
-use criterion::{black_box, criterion_group, BenchmarkId, Criterion};
-use kand::ohlcv::correl::correl;
+use criterion::{BenchmarkId, Criterion, criterion_group};
+use std::hint::black_box;
+use kand::stats::correl::correl;
 
-use crate::helpers::generate_test_data;
+use crate::helper::generate_test_data;
 
 #[allow(dead_code)]
 fn bench_correl(c: &mut Criterion) {

@@ -7,7 +7,7 @@ use crate::{KandError, TAFloat};
 /// can be calculated. For TRIMA, this equals one less than the specified period.
 ///
 /// # Arguments
-/// * `param_period` - The smoothing period used for TRIMA calculation. Must be >= 2.
+/// * `opt_period` - The smoothing period used for TRIMA calculation. Must be >= 2.
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The required lookback period if successful
@@ -22,14 +22,14 @@ use crate::{KandError, TAFloat};
 /// let lookback = trima::lookback(period).unwrap();
 /// assert_eq!(lookback, 13); // period - 1
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates Triangular Moving Average (TRIMA) for a price series.
@@ -59,7 +59,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input` - Slice of input price values
-/// * `param_period` - Smoothing period for calculations (must be >= 2)
+/// * `opt_period` - Smoothing period for calculations (must be >= 2)
 /// * `output_sma1` - Mutable slice to store intermediate SMA values
 /// * `output_sma2` - Mutable slice to store final TRIMA values
 ///
@@ -71,7 +71,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - Output arrays don't match input length
 /// * `KandError::InvalidParameter` - Period is less than 2
 /// * `KandError::InsufficientData` - Input length is less than required lookback period
-/// * `KandError::NaNDetected` - Input contains NaN values (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN values (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -86,12 +86,12 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn trima(
     input: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_sma1: &mut [TAFloat],
     output_sma2: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -111,7 +111,7 @@ pub fn trima(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for value in input.iter().take(len) {
             if value.is_nan() {
@@ -120,12 +120,12 @@ pub fn trima(
         }
     }
 
-    let (n, m) = if param_period % 2 == 1 {
-        let n = param_period.div_ceil(2);
+    let (n, m) = if opt_period % 2 == 1 {
+        let n = opt_period.div_ceil(2);
         (n, n)
     } else {
-        let n = (param_period / 2) + 1;
-        let m = param_period / 2;
+        let n = (opt_period / 2) + 1;
+        let m = opt_period / 2;
         (n, m)
     };
 
@@ -188,14 +188,14 @@ pub fn trima(
 /// * `input_new_price` - Latest price to include in calculation
 /// * `input_old_price` - Price dropping out of first window
 /// * `input_old_sma1` - SMA1 value dropping out of second window
-/// * `param_period` - The smoothing period for calculations (must be >= 2)
+/// * `opt_period` - The smoothing period for calculations (must be >= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat), KandError>` - Tuple of (`new_sma1`, `new_trima`) on success
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - Period is less than 2
-/// * `KandError::NaNDetected` - Input contains NaN values (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN values (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -218,16 +218,16 @@ pub fn trima_inc(
     input_new_price: TAFloat,
     input_old_price: TAFloat,
     input_old_sma1: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if prev_sma1.is_nan()
             || prev_sma2.is_nan()
@@ -239,12 +239,12 @@ pub fn trima_inc(
         }
     }
 
-    let (n, m) = if param_period % 2 == 1 {
-        let n = param_period.div_ceil(2);
+    let (n, m) = if opt_period % 2 == 1 {
+        let n = opt_period.div_ceil(2);
         (n, n)
     } else {
-        let n = (param_period / 2) + 1;
-        let m = param_period / 2;
+        let n = (opt_period / 2) + 1;
+        let m = opt_period / 2;
         (n, m)
     };
 
@@ -357,11 +357,11 @@ mod tests {
             34_980.194_166_666_65,
         ];
 
-        let param_period = 30;
+        let opt_period = 30;
         let mut output_sma1 = vec![0.0; input.len()];
         let mut output_sma2 = vec![0.0; input.len()];
 
-        trima(&input, param_period, &mut output_sma1, &mut output_sma2).unwrap();
+        trima(&input, opt_period, &mut output_sma1, &mut output_sma2).unwrap();
 
         // First 29 values should be NaN
         for i in 0..29 {
@@ -375,10 +375,10 @@ mod tests {
         }
 
         // Test incremental calculation
-        let (n, m) = if param_period % 2 == 1 {
-            (param_period.div_ceil(2), param_period.div_ceil(2))
+        let (n, m) = if opt_period % 2 == 1 {
+            (opt_period.div_ceil(2), opt_period.div_ceil(2))
         } else {
-            (((param_period / 2) + 1), (param_period / 2))
+            (((opt_period / 2) + 1), (opt_period / 2))
         };
 
         let mut prev_sma1 = output_sma1[43];
@@ -389,12 +389,7 @@ mod tests {
             let old_price = input[i - n];
             let old_sma1 = output_sma1[i - m];
             let (new_sma1, new_sma2) = trima_inc(
-                prev_sma1,
-                prev_sma2,
-                input[i],
-                old_price,
-                old_sma1,
-                param_period,
+                prev_sma1, prev_sma2, input[i], old_price, old_sma1, opt_period,
             )
             .unwrap();
 

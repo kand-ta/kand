@@ -22,10 +22,11 @@ pyo3 = {workspace = true, features = ["extension-module"]}
 kand = { workspace = true}
 
 [features]
-default = ["f32", "i64", "check"]         # Default: extended precision with basic checks
+default = ["f64", "i64", "check"]         # Default: extended precision with basic checks
 f32 = ["kand/f32"]                        # 32-bit floating point
 f64 = ["kand/f64"]                        # 64-bit floating point
 i32 = ["kand/i32"]                        # 32-bit integer
 i64 = ["kand/i64"]                        # 64-bit integer
 check = ["kand/check"]                    # Basic validation checks
-deep-check = ["check", "kand/deep-check"] # Extended validation checks
+check-nan = ["kand/check-nan"]            # Input NaN checks
+allow-nan = ["kand/allow-nan"]            # Allow NaN values in output data

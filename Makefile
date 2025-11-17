@@ -67,6 +67,35 @@ uv-sync:
 	uv sync
 	uv run "./scripts/gen_stub.py" kand kand-py/python/kand/_kand.pyi
 
+# Check for unused dependencies using cargo-udeps with nightly toolchain
+.PHONY: udeps
+udeps:
+	cargo +nightly udeps --all-features
+
+# Update and run udeps to check for unused dependencies
+.PHONY: udeps-check
+udeps-check:
+	cargo update
+	cargo +nightly udeps --all-features
+
+
+# Build the wasm package
+.PHONY: wasm-build
+wasm-build:
+	@echo "Building WASM package..."
+	(cd kand-wasm && wasm-pack build --target web && wasm-pack pack pkg)
+
+# Publish the wasm package to npm
+# Note: You must be logged in to npm for this to work (`npm login`)
+.PHONY: wasm-publish
+wasm-publish: wasm-build
+	@echo "Publishing WASM package to npm..."
+	(cd kand-wasm/pkg && npm pkg fix && npm pkg set name="kand" && npm publish --access public)
+
+# Convenience target to build and publish wasm
+.PHONY: wasm
+wasm: wasm-publish
+
 # Run pre-commit hooks on all files
 .PHONY: pre-commit
 pre-commit:
@@ -75,4 +104,6 @@ pre-commit:
 	$(MAKE) clippy
 	$(MAKE) fmt
 	$(MAKE) cliff
+	$(MAKE) udeps-check
+	$(MAKE) wasm-build
 	$(MAKE) uv-sync

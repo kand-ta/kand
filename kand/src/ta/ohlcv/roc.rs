@@ -8,13 +8,13 @@ use crate::{KandError, TAFloat};
 /// the first value.
 ///
 /// # Parameters
-/// * `param_period` - The time period used for ROC calculation (usize)
+/// * `opt_period` - The time period used for ROC calculation (usize)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period if parameters are valid
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 1 (when "check" feature enabled)
+/// * `KandError::InvalidParameter` - If `opt_period` < 1 (when "check" feature enabled)
 ///
 /// # Example
 /// ```
@@ -22,15 +22,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = roc::lookback(14).unwrap();
 /// assert_eq!(lookback, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 1 {
+        if opt_period < 1 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Rate of Change (ROC) technical indicator for a price series
@@ -54,7 +54,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Parameters
 /// * `input_price` - Array of price values (slice of type `TAFloat`)
-/// * `param_period` - Number of periods to look back (usize)
+/// * `opt_period` - Number of periods to look back (usize)
 /// * `output_roc` - Array to store calculated ROC values, must be same length as `input_price` (mutable slice of type `TAFloat`)
 ///
 /// # Returns
@@ -63,28 +63,28 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input array is empty
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths
-/// * `KandError::InvalidParameter` - If `param_period` < 1
+/// * `KandError::InvalidParameter` - If `opt_period` < 1
 /// * `KandError::InsufficientData` - If input length <= lookback period
-/// * `KandError::NaNDetected` - If input contains NaN values (with "`deep-check`")
-/// * `KandError::InvalidData` - If division by zero occurs (with "`deep-check`")
+/// * `KandError::NaNDetected` - If input contains NaN values (with "`check-nan`")
+/// * `KandError::InvalidData` - If division by zero occurs (with "`check-nan`")
 ///
 /// # Example
 /// ```
 /// use kand::ohlcv::roc;
 ///
 /// let input_price = vec![10.0, 10.5, 11.2, 10.8, 11.5];
-/// let param_period = 2;
+/// let opt_period = 2;
 /// let mut output_roc = vec![0.0; 5];
 ///
-/// roc::roc(&input_price, param_period, &mut output_roc).unwrap();
+/// roc::roc(&input_price, opt_period, &mut output_roc).unwrap();
 /// ```
 pub fn roc(
     input_price: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_roc: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_price.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -104,7 +104,7 @@ pub fn roc(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_price {
             if price.is_nan() {
@@ -116,9 +116,9 @@ pub fn roc(
     // Calculate ROC values
     for i in lookback..len {
         let current_price = input_price[i];
-        let prev_price = input_price[i - param_period];
+        let prev_price = input_price[i - opt_period];
 
-        #[cfg(feature = "deep-check")]
+        #[cfg(feature = "check-nan")]
         {
             if prev_price == 0.0 {
                 return Err(KandError::InvalidData);
@@ -156,8 +156,8 @@ pub fn roc(
 /// * `Result<TAFloat, KandError>` - The calculated ROC value if successful
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - If either input is NaN (with "`deep-check`")
-/// * `KandError::InvalidData` - If `prev_price` is zero (with "`deep-check`")
+/// * `KandError::NaNDetected` - If either input is NaN (with "`check-nan`")
+/// * `KandError::InvalidData` - If `prev_price` is zero (with "`check-nan`")
 ///
 /// # Example
 /// ```
@@ -170,7 +170,7 @@ pub fn roc(
 /// assert_eq!(roc_value, 15.0); // ((11.5 - 10.0) / 10.0) * 100
 /// ```
 pub fn roc_inc(current_price: TAFloat, prev_price: TAFloat) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if current_price.is_nan() || prev_price.is_nan() {
@@ -198,10 +198,10 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_roc = vec![0.0; input_price.len()];
 
-        roc(&input_price, param_period, &mut output_roc).unwrap();
+        roc(&input_price, opt_period, &mut output_roc).unwrap();
 
         // First 13 values should be NaN
         for value in output_roc.iter().take(14) {
@@ -224,7 +224,7 @@ mod tests {
 
         // Test incremental calculation matches regular calculation
         for i in 15..20 {
-            let result = roc_inc(input_price[i], input_price[i - param_period]).unwrap();
+            let result = roc_inc(input_price[i], input_price[i - opt_period]).unwrap();
             assert_relative_eq!(result, output_roc[i], epsilon = 0.0001);
         }
     }

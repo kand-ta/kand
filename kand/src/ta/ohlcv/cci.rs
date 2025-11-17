@@ -9,7 +9,7 @@ use crate::{KandError, TAFloat};
 /// period parameter minus 1.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for calculations (must be >= 2)
+/// * `opt_period` - The time period used for calculations (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period on success, or error on failure
@@ -24,15 +24,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = cci::lookback(period).unwrap();
 /// assert_eq!(lookback, 13);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates the Commodity Channel Index (CCI) for a price series.
@@ -62,7 +62,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_high` - High prices array
 /// * `input_low` - Low prices array
 /// * `input_close` - Close prices array
-/// * `param_period` - The time period for calculations (must be >= 2)
+/// * `opt_period` - The time period for calculations (must be >= 2)
 /// * `output_cci` - Buffer to store CCI values
 /// * `output_tp` - Buffer to store typical price values
 /// * `output_tp_sma` - Buffer to store SMA of typical price values
@@ -107,14 +107,14 @@ pub fn cci(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_cci: &mut [TAFloat],
     output_tp: &mut [TAFloat],
     output_tp_sma: &mut [TAFloat],
     output_mean_dev: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -140,7 +140,7 @@ pub fn cci(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -153,16 +153,16 @@ pub fn cci(
     typprice::typprice(input_high, input_low, input_close, output_tp)?;
 
     // Calculate SMA of typical prices
-    sma::sma(output_tp, param_period, output_tp_sma)?;
+    sma::sma(output_tp, opt_period, output_tp_sma)?;
 
     // Calculate mean deviation
     let factor = 0.015;
     for i in lookback..len {
         let mut mean_dev = 0.0;
-        for j in 0..param_period {
+        for j in 0..opt_period {
             mean_dev += (output_tp[i - j] - output_tp_sma[i]).abs();
         }
-        mean_dev /= param_period as TAFloat;
+        mean_dev /= opt_period as TAFloat;
         output_mean_dev[i] = mean_dev;
 
         // Calculate CCI
@@ -214,8 +214,8 @@ pub fn cci(
 /// * `input_old_high` - Old high price to be removed
 /// * `input_old_low` - Old low price to be removed
 /// * `input_old_close` - Old close price to be removed
-/// * `param_period` - The time period for calculations (must be >= 2)
-/// * `tp_buffer` - Circular buffer containing last `param_period` typical prices
+/// * `opt_period` - The time period for calculations (must be >= 2)
+/// * `tp_buffer` - Circular buffer containing last `opt_period` typical prices
 ///
 /// # Returns
 /// * `Result<TAFloat, KandError>` - The next CCI value on success, or error on failure
@@ -259,18 +259,18 @@ pub fn cci_inc(
     input_old_high: TAFloat,
     input_old_low: TAFloat,
     input_old_close: TAFloat,
-    param_period: usize,
+    opt_period: usize,
     tp_buffer: &mut Vec<TAFloat>,
 ) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if prev_sma_tp.is_nan()
@@ -290,10 +290,10 @@ pub fn cci_inc(
     let old_tp = (input_old_high + input_old_low + input_old_close) / 3.0;
 
     // Calculate new SMA of typical prices
-    let sma_tp = sma::sma_inc(prev_sma_tp, new_tp, old_tp, param_period)?;
+    let sma_tp = sma::sma_inc(prev_sma_tp, new_tp, old_tp, opt_period)?;
 
     // Update circular buffer - remove oldest and add newest TP
-    if tp_buffer.len() == param_period {
+    if tp_buffer.len() == opt_period {
         tp_buffer.remove(0);
     }
     tp_buffer.push(new_tp);
@@ -303,7 +303,7 @@ pub fn cci_inc(
     for &tp in tp_buffer.iter() {
         mean_dev += (tp - sma_tp).abs();
     }
-    mean_dev /= param_period as TAFloat;
+    mean_dev /= opt_period as TAFloat;
 
     // Calculate CCI using constant factor 0.015
     let factor = 0.015;
@@ -338,7 +338,7 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_cci = vec![0.0; input_high.len()];
         let mut output_tp = vec![0.0; input_high.len()];
         let mut output_tp_sma = vec![0.0; input_high.len()];
@@ -348,7 +348,7 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
+            opt_period,
             &mut output_cci,
             &mut output_tp,
             &mut output_tp_sma,
@@ -385,24 +385,24 @@ mod tests {
         }
 
         // Initialize circular buffer for incremental calculation
-        let mut tp_buffer = Vec::with_capacity(param_period);
-        for i in 0..param_period {
+        let mut tp_buffer = Vec::with_capacity(opt_period);
+        for i in 0..opt_period {
             let tp = (input_high[i] + input_low[i] + input_close[i]) / 3.0;
             tp_buffer.push(tp);
         }
 
         // Calculate and verify incremental values
-        for i in param_period..input_high.len() {
+        for i in opt_period..input_high.len() {
             // Calculate incremental CCI
             let result = cci_inc(
                 output_tp_sma[i - 1],
                 input_high[i],
                 input_low[i],
                 input_close[i],
-                input_high[i - param_period],
-                input_low[i - param_period],
-                input_close[i - param_period],
-                param_period,
+                input_high[i - opt_period],
+                input_low[i - opt_period],
+                input_close[i - opt_period],
+                opt_period,
                 &mut tp_buffer,
             )
             .unwrap();

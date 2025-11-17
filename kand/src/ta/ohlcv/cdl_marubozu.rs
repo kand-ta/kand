@@ -9,35 +9,35 @@ use crate::{
 /// # Description
 /// The lookback period represents the minimum number of historical data points needed
 /// before generating the first valid signal. For Marubozu pattern, this equals
-/// `param_period - 1` to allow for proper EMA calculation of average body sizes.
+/// `opt_period - 1` to allow for proper EMA calculation of average body sizes.
 ///
 /// # Parameters
-/// * `param_period` - The period used for calculating the exponential moving average (EMA)
+/// * `opt_period` - The period used for calculating the exponential moving average (EMA)
 ///   of candle body sizes. Must be >= 2.
 ///
 /// # Returns
 /// * `Ok(usize)` - The required lookback period
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Examples
 /// ```
 /// use kand::ohlcv::cdl_marubozu;
 ///
-/// let param_period = 14;
-/// let lookback_period = cdl_marubozu::lookback(param_period).unwrap();
+/// let opt_period = 14;
+/// let lookback_period = cdl_marubozu::lookback(opt_period).unwrap();
 /// assert_eq!(lookback_period, 13);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Identifies Marubozu candlestick patterns in price data.
@@ -54,15 +54,15 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// 2. Upper shadow = high - max(open,close)
 /// 3. Lower shadow = min(open,close) - low
 /// 4. Compare body length to EMA of previous body lengths
-/// 5. Check if both shadows are smaller than threshold (`param_shadow_percent`% of body)
+/// 5. Check if both shadows are smaller than threshold (`opt_shadow_percent`% of body)
 ///
 /// # Parameters
 /// * `input_open` - Array of opening prices
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - Period for EMA calculation (>= 2)
-/// * `param_shadow_percent` - Maximum shadow size as percentage of body (e.g. 5.0)
+/// * `opt_period` - Period for EMA calculation (>= 2)
+/// * `opt_shadow_percent` - Maximum shadow size as percentage of body (e.g. 5.0)
 /// * `output_signals` - Output array for pattern signals:
 ///   - 1: Bullish Marubozu (strong upward trend)
 ///   - 0: No pattern
@@ -75,9 +75,9 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * [`KandError::InvalidData`] - Empty input arrays
 /// * [`KandError::LengthMismatch`] - Input/output arrays have different lengths
-/// * [`KandError::InvalidParameter`] - Invalid `param_period` (<2) or `param_shadow_percent` (<=0)
+/// * [`KandError::InvalidParameter`] - Invalid `opt_period` (<2) or `opt_shadow_percent` (<=0)
 /// * [`KandError::InsufficientData`] - Input length less than required lookback period
-/// * [`KandError::NaNDetected`] - NaN values in input (when `deep-check` enabled)
+/// * [`KandError::NaNDetected`] - NaN values in input (when `check-nan` enabled)
 /// * [`KandError::ConversionError`] - Numeric conversion error
 ///
 /// # Examples
@@ -108,13 +108,13 @@ pub fn cdl_marubozu(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
-    param_shadow_percent: TAFloat,
+    opt_period: usize,
+    opt_shadow_percent: TAFloat,
     output_signals: &mut [TAInt],
     output_body_avg: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_open.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -138,16 +138,16 @@ pub fn cdl_marubozu(
             return Err(KandError::LengthMismatch);
         }
 
-        // Check param_period
-        if param_period < 2 {
+        // Check opt_period
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
-        if param_shadow_percent <= 0.0 {
+        if opt_shadow_percent <= 0.0 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -163,22 +163,22 @@ pub fn cdl_marubozu(
 
     // Calculate initial SMA
     let mut sum = 0.0;
-    for i in 0..param_period {
+    for i in 0..opt_period {
         sum += real_body_length(input_open[i], input_close[i]);
     }
-    let mut body_avg = sum / param_period as TAFloat;
+    let mut body_avg = sum / opt_period as TAFloat;
     output_body_avg[lookback] = body_avg;
 
     // Process each candle
-    for i in param_period..len {
+    for i in opt_period..len {
         let (signal, new_body_avg) = cdl_marubozu_inc(
             input_open[i],
             input_high[i],
             input_low[i],
             input_close[i],
             body_avg,
-            param_period,
-            param_shadow_percent,
+            opt_period,
+            opt_shadow_percent,
         )?;
         output_signals[i] = signal;
         output_body_avg[i] = new_body_avg;
@@ -206,7 +206,7 @@ pub fn cdl_marubozu(
 /// 1. Body = |close - open|
 /// 2. Upper shadow = high - max(open,close)
 /// 3. Lower shadow = min(open,close) - low
-/// 4. Shadow threshold = body * `param_shadow_percent` / 100
+/// 4. Shadow threshold = body * `opt_shadow_percent` / 100
 /// 5. New EMA = (Current - Prev) * K + Prev, where K = 2/(period+1)
 /// 6. Pattern identified if:
 ///    - Body > current EMA
@@ -219,8 +219,8 @@ pub fn cdl_marubozu(
 /// * `input_low` - Low price of current candle
 /// * `input_close` - Closing price of current candle
 /// * `prev_body_avg` - Previous EMA value of body sizes
-/// * `param_period` - Period for EMA calculation (>= 2)
-/// * `param_shadow_percent` - Maximum shadow size as percentage of body
+/// * `opt_period` - Period for EMA calculation (>= 2)
+/// * `opt_shadow_percent` - Maximum shadow size as percentage of body
 ///
 /// # Returns
 /// * `Ok((TAInt, T))` - Tuple containing:
@@ -228,8 +228,8 @@ pub fn cdl_marubozu(
 ///   - Updated EMA of body sizes
 ///
 /// # Errors
-/// * [`KandError::InvalidParameter`] - If `param_period` < 2 or `param_shadow_percent` <= 0
-/// * [`KandError::NaNDetected`] - If any input contains NaN (when `deep-check` feature is enabled)
+/// * [`KandError::InvalidParameter`] - If `opt_period` < 2 or `opt_shadow_percent` <= 0
+/// * [`KandError::NaNDetected`] - If any input contains NaN (when `check-nan` feature is enabled)
 /// * [`KandError::ConversionError`] - If numeric conversion fails
 ///
 /// # Examples
@@ -253,21 +253,21 @@ pub fn cdl_marubozu_inc(
     input_low: TAFloat,
     input_close: TAFloat,
     prev_body_avg: TAFloat,
-    param_period: usize,
-    param_shadow_percent: TAFloat,
+    opt_period: usize,
+    opt_shadow_percent: TAFloat,
 ) -> Result<(TAInt, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
-        if param_shadow_percent <= 0.0 {
+        if opt_shadow_percent <= 0.0 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_open.is_nan()
@@ -283,10 +283,10 @@ pub fn cdl_marubozu_inc(
     let body = real_body_length(input_open, input_close);
     let up_shadow = upper_shadow_length(input_high, input_open, input_close);
     let dn_shadow = lower_shadow_length(input_low, input_open, input_close);
-    let shadow_threshold = body * param_shadow_percent / 100.0;
+    let shadow_threshold = body * opt_shadow_percent / 100.0;
 
     // Calculate new body average using EMA formula
-    let multiplier = period_to_k(param_period)?;
+    let multiplier = period_to_k(opt_period)?;
     let new_body_avg = (body - prev_body_avg).mul_add(multiplier, prev_body_avg);
 
     // Check for Marubozu pattern
@@ -350,8 +350,8 @@ mod tests {
             96009.7, 96087.9, 96230.0, 96275.6, 96350.2, 96477.6, 96423.6, 96749.1,
         ];
 
-        let param_period = 14;
-        let param_shadow_percent = 5.0;
+        let opt_period = 14;
+        let opt_shadow_percent = 5.0;
         let mut output_signals = vec![0i64; input_open.len()];
         let mut output_body_avg = vec![0.0; input_open.len()];
 
@@ -360,8 +360,8 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
-            param_shadow_percent,
+            opt_period,
+            opt_shadow_percent,
             &mut output_signals,
             &mut output_body_avg,
         )
@@ -390,8 +390,8 @@ mod tests {
                 input_low[i],
                 input_close[i],
                 prev_body_avg,
-                param_period,
-                param_shadow_percent,
+                opt_period,
+                opt_shadow_percent,
             )
             .unwrap();
             assert_eq!(signal, output_signals[i]);

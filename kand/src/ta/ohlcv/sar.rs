@@ -7,14 +7,14 @@ use crate::{KandError, TAFloat};
 /// For the Parabolic SAR indicator, this is always 1 period.
 ///
 /// # Parameters
-/// * `param_acceleration` - The acceleration factor used in SAR calculation. Type: `TAFloat`
-/// * `param_maximum` - The maximum allowed acceleration factor. Type: `TAFloat`
+/// * `opt_acceleration` - The acceleration factor used in SAR calculation. Type: `TAFloat`
+/// * `opt_maximum` - The maximum allowed acceleration factor. Type: `TAFloat`
 ///
 /// # Returns
 /// * `Ok(usize)` - The lookback period (1)
 ///
 /// # Errors
-/// * Returns `KandError::InvalidParameter` if `param_acceleration` or `param_maximum` are invalid
+/// * Returns `KandError::InvalidParameter` if `opt_acceleration` or `opt_maximum` are invalid
 ///
 /// # Example
 /// ```
@@ -26,8 +26,8 @@ use crate::{KandError, TAFloat};
 /// assert_eq!(lookback, 1);
 /// ```
 pub const fn lookback(
-    _param_acceleration: TAFloat,
-    _param_maximum: TAFloat,
+    _opt_acceleration: TAFloat,
+    _opt_maximum: TAFloat,
 ) -> Result<usize, KandError> {
     Ok(1)
 }
@@ -44,21 +44,21 @@ pub const fn lookback(
 /// Uptrend (Long):
 /// SAR(t) = SAR(t-1) + AF * (EP - SAR(t-1))
 /// where:
-/// - AF (Acceleration Factor) increases by param_acceleration when new EP is reached
+/// - AF (Acceleration Factor) increases by opt_acceleration when new EP is reached
 /// - EP (Extreme Point) is the highest high in current uptrend
 ///
 /// Downtrend (Short):
 /// SAR(t) = SAR(t-1) + AF * (EP - SAR(t-1))
 /// where:
-/// - AF increases by param_acceleration when new EP is reached
+/// - AF increases by opt_acceleration when new EP is reached
 /// - EP is the lowest low in current downtrend
 /// ```
 ///
 /// # Parameters
 /// * `input_high` - Array of high prices. Type: `&[TAFloat]`
 /// * `input_low` - Array of low prices. Type: `&[TAFloat]`
-/// * `param_acceleration` - Initial acceleration factor (e.g. 0.02). Type: `TAFloat`
-/// * `param_maximum` - Maximum acceleration factor (e.g. 0.2). Type: `TAFloat`
+/// * `opt_acceleration` - Initial acceleration factor (e.g. 0.02). Type: `TAFloat`
+/// * `opt_maximum` - Maximum acceleration factor (e.g. 0.2). Type: `TAFloat`
 /// * `output_sar` - Buffer to store SAR values. Type: `&mut [TAFloat]`
 /// * `output_is_long` - Buffer to store trend direction (true=long, false=short). Type: `&mut [bool]`
 /// * `output_af` - Buffer to store acceleration factors. Type: `&mut [TAFloat]`
@@ -100,15 +100,15 @@ pub const fn lookback(
 pub fn sar(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
-    param_acceleration: TAFloat,
-    param_maximum: TAFloat,
+    opt_acceleration: TAFloat,
+    opt_maximum: TAFloat,
     output_sar: &mut [TAFloat],
     output_is_long: &mut [bool],
     output_af: &mut [TAFloat],
     output_ep: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_acceleration, param_maximum)?;
+    let lookback = lookback(opt_acceleration, opt_maximum)?;
 
     #[cfg(feature = "check")]
     {
@@ -123,7 +123,7 @@ pub fn sar(
         {
             return Err(KandError::LengthMismatch);
         }
-        if param_acceleration <= 0.0 || param_maximum <= param_acceleration {
+        if opt_acceleration <= 0.0 || opt_maximum <= opt_acceleration {
             return Err(KandError::InvalidParameter);
         }
         if len <= lookback {
@@ -131,7 +131,7 @@ pub fn sar(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_high[i].is_nan() || input_low[i].is_nan() {
@@ -145,7 +145,7 @@ pub fn sar(
     let minus_dm = input_low[0] - input_low[1];
     let initial_trend = plus_dm >= minus_dm; // Default to long if equal
 
-    let mut af = param_acceleration;
+    let mut af = opt_acceleration;
     let mut ep = if initial_trend {
         input_high[1]
     } else {
@@ -188,13 +188,13 @@ pub fn sar(
             }
             if high > ep {
                 ep = high;
-                af = (af + param_acceleration).min(param_maximum);
+                af = (af + opt_acceleration).min(opt_maximum);
             }
             if low < sar_val {
                 is_long = false;
                 sar_val = ep;
                 ep = low;
-                af = param_acceleration;
+                af = opt_acceleration;
                 trend_start = i - 1;
             }
         } else {
@@ -205,13 +205,13 @@ pub fn sar(
             }
             if low < ep {
                 ep = low;
-                af = (af + param_acceleration).min(param_maximum);
+                af = (af + opt_acceleration).min(opt_maximum);
             }
             if high > sar_val {
                 is_long = true;
                 sar_val = ep;
                 ep = high;
-                af = param_acceleration;
+                af = opt_acceleration;
                 trend_start = i - 1;
             }
         }
@@ -240,8 +240,8 @@ pub fn sar(
 /// * `input_is_long` - Current trend direction (true=long, false=short). Type: `bool`
 /// * `input_af` - Current acceleration factor. Type: `TAFloat`
 /// * `input_ep` - Current extreme point. Type: `TAFloat`
-/// * `param_acceleration` - Acceleration factor increment. Type: `TAFloat`
-/// * `param_maximum` - Maximum acceleration factor. Type: `TAFloat`
+/// * `opt_acceleration` - Acceleration factor increment. Type: `TAFloat`
+/// * `opt_maximum` - Maximum acceleration factor. Type: `TAFloat`
 ///
 /// # Returns
 /// A `Result` containing:
@@ -282,17 +282,17 @@ pub fn sar_inc(
     input_is_long: bool,
     input_af: TAFloat,
     input_ep: TAFloat,
-    param_acceleration: TAFloat,
-    param_maximum: TAFloat,
+    opt_acceleration: TAFloat,
+    opt_maximum: TAFloat,
 ) -> Result<(TAFloat, bool, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_acceleration <= 0.0 || param_maximum <= param_acceleration {
+        if opt_acceleration <= 0.0 || opt_maximum <= opt_acceleration {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_high.is_nan()
             || input_low.is_nan()
@@ -316,25 +316,25 @@ pub fn sar_inc(
         sar = sar.min(prev_low);
         if high > ep {
             ep = high;
-            af = (af + param_acceleration).min(param_maximum);
+            af = (af + opt_acceleration).min(opt_maximum);
         }
         if low < sar {
             is_long = false;
             sar = ep;
             ep = low;
-            af = param_acceleration;
+            af = opt_acceleration;
         }
     } else {
         sar = sar.max(prev_high);
         if low < ep {
             ep = low;
-            af = (af + param_acceleration).min(param_maximum);
+            af = (af + opt_acceleration).min(opt_maximum);
         }
         if high > sar {
             is_long = true;
             sar = ep;
             ep = high;
-            af = param_acceleration;
+            af = opt_acceleration;
         }
     }
 
@@ -360,8 +360,8 @@ mod tests {
             35012.3, 35022.2,
         ];
 
-        let param_acceleration = 0.02;
-        let param_maximum = 0.2;
+        let opt_acceleration = 0.02;
+        let opt_maximum = 0.2;
         let mut output_sar = vec![0.0; input_high.len()];
         let mut output_is_long = vec![false; input_high.len()];
         let mut output_af = vec![0.0; input_high.len()];
@@ -370,8 +370,8 @@ mod tests {
         sar(
             &input_high,
             &input_low,
-            param_acceleration,
-            param_maximum,
+            opt_acceleration,
+            opt_maximum,
             &mut output_sar,
             &mut output_is_long,
             &mut output_af,
@@ -412,7 +412,7 @@ mod tests {
         // Test incremental calculation
         let mut prev_sar = output_sar[1];
         let mut is_long = output_is_long[1];
-        let mut af = param_acceleration;
+        let mut af = opt_acceleration;
         let mut ep = output_ep[1]; // Use the previously calculated EP instead of input_high[1]
 
         for i in 2..6 {
@@ -425,8 +425,8 @@ mod tests {
                 is_long,
                 af,
                 ep,
-                param_acceleration,
-                param_maximum,
+                opt_acceleration,
+                opt_maximum,
             )
             .unwrap();
 

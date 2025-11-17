@@ -47,7 +47,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input arrays have different lengths
-/// * `KandError::NaNDetected` - If any input value is NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -81,7 +81,7 @@ pub fn typprice(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -113,7 +113,7 @@ pub fn typprice(
 /// * `Result<TAFloat, KandError>` - The calculated Typical Price value
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - If any input value is NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -130,7 +130,7 @@ pub fn typprice_inc(
     input_low: TAFloat,
     input_close: TAFloat,
 ) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_high.is_nan() || input_low.is_nan() || input_close.is_nan() {

@@ -64,7 +64,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
-/// * `KandError::NaNDetected` - If any input contains NaN (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If any input contains NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -119,7 +119,7 @@ pub fn vwap(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         for i in 0..len {

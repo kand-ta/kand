@@ -4,10 +4,25 @@ This document records all significant updates and changes to the Kand project.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- Update readme
+- Update readme
+- Update readme
+- Add CONTRIBUTING
+- Update Readme add Disclaimer
+- Add CORREL (Pearson's Correlation Coefficient) indicator (#27)
+
 ### 🐛 Bug Fixes
 
 - *(ci)* Fix publish-rust
 - *(.editorconfig)* Fix path
+- Update mkdocs.yml
+
+### 💼 Other
+
+- *(deps)* Bump serde_json from 1.0.140 to 1.0.141 (#28)
+- *(deps)* Bump rand from 0.9.0 to 0.9.2 (#29)
 
 ## [0.2.2] - 2025-03-04
 
@@ -82,6 +97,8 @@ This document records all significant updates and changes to the Kand project.
 ### 🐛 Bug Fixes
 
 - *(aroonosc)* Optimize precision conversion by replacing 'as' with 'T::from' for safety
+
+## [0.0.4] - 2025-02-23
 
 ---
 

@@ -56,7 +56,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input arrays have different lengths
 /// * `KandError::InsufficientData` - If input length <= lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -95,7 +95,7 @@ pub fn obv(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -137,7 +137,7 @@ pub fn obv(
 /// * `Result<TAFloat, KandError>` - Latest OBV value if calculation succeeds, Err otherwise
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -157,7 +157,7 @@ pub fn obv_inc(
     input_volume: TAFloat,
     prev_obv: TAFloat,
 ) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_curr_close.is_nan()

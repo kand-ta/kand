@@ -7,9 +7,9 @@ use crate::{KandError, TAFloat, ta::ohlcv::sma};
 /// the indicator can generate valid values. It is calculated based on the input parameters.
 ///
 /// # Arguments
-/// * `param_k_period` - The period used for %K calculation, must be >= 2
-/// * `param_k_slow_period` - The smoothing period for slow %K calculation, must be >= 2
-/// * `param_d_period` - The period used for %D calculation, must be >= 2
+/// * `opt_k_period` - The period used for %K calculation, must be >= 2
+/// * `opt_k_slow_period` - The smoothing period for slow %K calculation, must be >= 2
+/// * `opt_d_period` - The period used for %D calculation, must be >= 2
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period if successful
@@ -29,18 +29,18 @@ use crate::{KandError, TAFloat, ta::ohlcv::sma};
 /// assert_eq!(lookback, 17); // 14 + 3 + 3 - 3 = 17
 /// ```
 pub const fn lookback(
-    param_k_period: usize,
-    param_k_slow_period: usize,
-    param_d_period: usize,
+    opt_k_period: usize,
+    opt_k_slow_period: usize,
+    opt_d_period: usize,
 ) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_k_period < 2 || param_k_slow_period < 2 || param_d_period < 2 {
+        if opt_k_period < 2 || opt_k_slow_period < 2 || opt_d_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_k_period + param_k_slow_period + param_d_period - 3)
+    Ok(opt_k_period + opt_k_slow_period + opt_d_period - 3)
 }
 
 /// Calculates the Stochastic Oscillator indicator for the entire price series.
@@ -66,9 +66,9 @@ pub const fn lookback(
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_k_period` - Period for %K calculation, must be >= 2
-/// * `param_k_slow_period` - Smoothing period for slow %K, must be >= 2
-/// * `param_d_period` - Period for %D calculation, must be >= 2
+/// * `opt_k_period` - Period for %K calculation, must be >= 2
+/// * `opt_k_slow_period` - Smoothing period for slow %K, must be >= 2
+/// * `opt_d_period` - Period for %D calculation, must be >= 2
 /// * `output_fast_k` - Array to store Fast %K values
 /// * `output_k` - Array to store Slow %K values
 /// * `output_d` - Array to store %D values
@@ -81,7 +81,7 @@ pub const fn lookback(
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
 /// * `KandError::InvalidParameter` - If any period parameter is less than 2
 /// * `KandError::InsufficientData` - If input length is less than required lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -90,9 +90,9 @@ pub const fn lookback(
 /// let input_high = vec![10.0, 12.0, 15.0, 14.0, 13.0];
 /// let input_low = vec![8.0, 9.0, 11.0, 10.0, 9.0];
 /// let input_close = vec![9.0, 11.0, 14.0, 12.0, 11.0];
-/// let param_k_period = 3;
-/// let param_k_slow_period = 2;
-/// let param_d_period = 2;
+/// let opt_k_period = 3;
+/// let opt_k_slow_period = 2;
+/// let opt_d_period = 2;
 /// let mut output_fast_k = vec![0.0; 5];
 /// let mut output_k = vec![0.0; 5];
 /// let mut output_d = vec![0.0; 5];
@@ -101,9 +101,9 @@ pub const fn lookback(
 ///     &input_high,
 ///     &input_low,
 ///     &input_close,
-///     param_k_period,
-///     param_k_slow_period,
-///     param_d_period,
+///     opt_k_period,
+///     opt_k_slow_period,
+///     opt_d_period,
 ///     &mut output_fast_k,
 ///     &mut output_k,
 ///     &mut output_d,
@@ -115,15 +115,15 @@ pub fn stoch(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_k_period: usize,
-    param_k_slow_period: usize,
-    param_d_period: usize,
+    opt_k_period: usize,
+    opt_k_slow_period: usize,
+    opt_d_period: usize,
     output_fast_k: &mut [TAFloat],
     output_k: &mut [TAFloat],
     output_d: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_k_period, param_k_slow_period, param_d_period)?;
+    let lookback = lookback(opt_k_period, opt_k_slow_period, opt_d_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -148,7 +148,7 @@ pub fn stoch(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -161,11 +161,11 @@ pub fn stoch(
     let hundred = 100.0;
 
     // Calculate Fast %K first
-    for i in (param_k_period - 1)..len {
+    for i in (opt_k_period - 1)..len {
         let mut highest_high = input_high[i];
         let mut lowest_low = input_low[i];
 
-        for j in 0..param_k_period {
+        for j in 0..opt_k_period {
             let idx = i - j;
             highest_high = highest_high.max(input_high[idx]);
             lowest_low = lowest_low.min(input_low[idx]);
@@ -180,13 +180,13 @@ pub fn stoch(
     }
 
     // Calculate Slow %K (SMA of Fast %K)
-    sma::sma(output_fast_k, param_k_slow_period, output_k)?;
+    sma::sma(output_fast_k, opt_k_slow_period, output_k)?;
 
     // Calculate %D (SMA of Slow %K)
     sma::sma(
-        &output_k[param_k_slow_period - 1..],
-        param_d_period,
-        &mut output_d[param_k_slow_period - 1..],
+        &output_k[opt_k_slow_period - 1..],
+        opt_d_period,
+        &mut output_d[opt_k_slow_period - 1..],
     )?;
 
     // Fill initial values with NAN
@@ -224,9 +224,9 @@ mod tests {
             35069.0, 35024.6, 34939.5, 34952.6, 35000.0, 35041.8, 35080.0,
         ];
 
-        let param_k_period = 14;
-        let param_k_slow_period = 3;
-        let param_d_period = 3;
+        let opt_k_period = 14;
+        let opt_k_slow_period = 3;
+        let opt_d_period = 3;
         let mut output_fast_k = vec![0.0; input_high.len()];
         let mut output_k = vec![0.0; input_high.len()];
         let mut output_d = vec![0.0; input_high.len()];
@@ -235,9 +235,9 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_k_period,
-            param_k_slow_period,
-            param_d_period,
+            opt_k_period,
+            opt_k_slow_period,
+            opt_d_period,
             &mut output_fast_k,
             &mut output_k,
             &mut output_d,

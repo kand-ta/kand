@@ -7,13 +7,13 @@ use crate::{KandError, TAFloat, ta::ohlcv::typprice};
 /// previous data points to calculate the money flow ratio.
 ///
 /// # Arguments
-/// * `param_period` - The time period for MFI calculation (e.g. 14 for a 14-period MFI)
+/// * `opt_period` - The time period for MFI calculation (e.g. 14 for a 14-period MFI)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The required lookback period on success
 ///
 /// # Errors
-/// * Returns `KandError::InvalidParameter` if `param_period` is less than 2
+/// * Returns `KandError::InvalidParameter` if `opt_period` is less than 2
 ///
 /// # Examples
 /// ```
@@ -22,14 +22,14 @@ use crate::{KandError, TAFloat, ta::ohlcv::typprice};
 /// let lookback = mfi::lookback(period).unwrap();
 /// assert_eq!(lookback, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Money Flow Index (MFI) for a price series.
@@ -54,7 +54,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of close prices
 /// * `input_volume` - Array of volume data
-/// * `param_period` - The time period for MFI calculation (typically 14)
+/// * `opt_period` - The time period for MFI calculation (typically 14)
 /// * `output_mfi` - Array to store the calculated MFI values (0-100)
 /// * `output_typ_prices` - Array to store the calculated typical prices
 /// * `output_money_flows` - Array to store the calculated money flows
@@ -65,7 +65,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `Result<(), KandError>` - Empty result on success
 ///
 /// # Errors
-/// * Returns `KandError::InvalidParameter` if `param_period` is zero
+/// * Returns `KandError::InvalidParameter` if `opt_period` is zero
 /// * Returns `KandError::InvalidData` if input arrays are empty
 /// * Returns `KandError::LengthMismatch` if input arrays have different lengths
 ///
@@ -102,7 +102,7 @@ pub fn mfi(
     input_low: &[TAFloat],
     input_close: &[TAFloat],
     input_volume: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_mfi: &mut [TAFloat],
     output_typ_prices: &mut [TAFloat],
     output_money_flows: &mut [TAFloat],
@@ -110,7 +110,7 @@ pub fn mfi(
     output_neg_flows: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -138,7 +138,7 @@ pub fn mfi(
         }
 
         // Parameter validation
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
@@ -152,12 +152,12 @@ pub fn mfi(
     }
 
     // Calculate MFI for each period
-    for i in param_period..len {
+    for i in opt_period..len {
         let mut pos_flow = 0.0;
         let mut neg_flow = 0.0;
 
         // Calculate positive and negative money flows over the period
-        for j in (i - param_period + 1)..=i {
+        for j in (i - opt_period + 1)..=i {
             if output_typ_prices[j] > output_typ_prices[j - 1] {
                 pos_flow += output_money_flows[j];
             } else if output_typ_prices[j] < output_typ_prices[j - 1] {
@@ -179,7 +179,7 @@ pub fn mfi(
     }
 
     // Set initial values to NaN
-    for i in 0..param_period {
+    for i in 0..opt_period {
         output_mfi[i] = TAFloat::NAN;
         output_pos_flows[i] = TAFloat::NAN;
         output_neg_flows[i] = TAFloat::NAN;
@@ -222,7 +222,7 @@ mod tests {
             1726.574, 934.713, 2199.061, 2349.823, 837.218, 1000.638, 1218.202, 2573.668, 1098.409,
             609.582, 670.489, 1637.998,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_mfi = vec![0.0; input_high.len()];
         let mut output_typ_prices = vec![0.0; input_high.len()];
         let mut output_money_flows = vec![0.0; input_high.len()];
@@ -234,7 +234,7 @@ mod tests {
             &input_low,
             &input_close,
             &input_volume,
-            param_period,
+            opt_period,
             &mut output_mfi,
             &mut output_typ_prices,
             &mut output_money_flows,

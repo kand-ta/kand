@@ -51,7 +51,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input arrays have different lengths
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -82,7 +82,7 @@ pub fn wclprice(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_high[i].is_nan() || input_low[i].is_nan() || input_close[i].is_nan() {
@@ -113,7 +113,7 @@ pub fn wclprice(
 /// * `Result<TAFloat, KandError>` - The calculated WCLPRICE value if successful
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -130,7 +130,7 @@ pub fn wclprice_inc(
     input_low: TAFloat,
     input_close: TAFloat,
 ) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_high.is_nan() || input_low.is_nan() || input_close.is_nan() {
             return Err(KandError::NaNDetected);

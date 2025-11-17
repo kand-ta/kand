@@ -105,7 +105,7 @@ pub fn vegas(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_price {
             // NaN check
@@ -178,7 +178,7 @@ pub fn vegas_inc(
     prev_boundary_upper: TAFloat,
     prev_boundary_lower: TAFloat,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_price.is_nan()

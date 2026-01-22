@@ -8,35 +8,35 @@ use crate::{
 ///
 /// # Description
 /// Calculates the minimum number of historical data points needed to generate valid signals.
-/// For Inverted Hammer pattern with EMA of body sizes, this is `param_period` - 1.
+/// For Inverted Hammer pattern with EMA of body sizes, this is `opt_period` - 1.
 ///
 /// # Arguments
-/// * `param_period` - The period used for calculating the exponential moving average (EMA) of candle body sizes.
+/// * `opt_period` - The period used for calculating the exponential moving average (EMA) of candle body sizes.
 ///   Must be >= 2.
 ///
 /// # Returns
-/// * `Ok(usize)` - The required lookback period (`param_period` - 1)
+/// * `Ok(usize)` - The required lookback period (`opt_period` - 1)
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Examples
 /// ```
 /// use kand::ohlcv::cdl_inverted_hammer;
 ///
-/// let param_period = 14;
-/// let lookback = cdl_inverted_hammer::lookback(param_period).unwrap();
+/// let opt_period = 14;
+/// let lookback = cdl_inverted_hammer::lookback(opt_period).unwrap();
 /// assert_eq!(lookback, 13);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Detects Inverted Hammer candlestick patterns in price data.
@@ -51,10 +51,10 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// 1. Calculate real body length = |close - open|
 /// 2. Calculate upper shadow = high - max(open, close)
 /// 3. Calculate lower shadow = min(open, close) - low
-/// 4. Calculate EMA of body sizes using `param_period`
+/// 4. Calculate EMA of body sizes using `opt_period`
 /// 5. Check pattern conditions:
 ///    - Small body: body <= `body_avg` && body > 0
-///    - Long upper shadow: `upper_shadow` >= `param_factor` * body
+///    - Long upper shadow: `upper_shadow` >= `opt_factor` * body
 ///    - Minimal lower shadow: `lower_shadow` <= body
 ///    - Body in lower half: max(open, close) < (high + low)/2
 ///
@@ -63,8 +63,8 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - Period for EMA calculation of body sizes (typically 14)
-/// * `param_factor` - Minimum ratio of upper shadow to body length (typically 2.0)
+/// * `opt_period` - Period for EMA calculation of body sizes (typically 14)
+/// * `opt_factor` - Minimum ratio of upper shadow to body length (typically 2.0)
 /// * `output_signals` - Output array for pattern signals:
 ///   - 1: Bullish Inverted Hammer detected
 ///   - 0: No pattern detected
@@ -77,7 +77,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * [`KandError::LengthMismatch`] - Input arrays have different lengths
 /// * [`KandError::InvalidParameter`] - Parameter values are invalid
 /// * [`KandError::InsufficientData`] - Input length is less than required lookback
-/// * [`KandError::NaNDetected`] - Input contains NaN values (when `deep-check` enabled)
+/// * [`KandError::NaNDetected`] - Input contains NaN values (when `check-nan` enabled)
 ///
 /// # Examples
 /// ```
@@ -107,13 +107,13 @@ pub fn cdl_inverted_hammer(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
-    param_factor: TAFloat,
+    opt_period: usize,
+    opt_factor: TAFloat,
     output_signals: &mut [TAInt],
     output_body_avg: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_open.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -126,12 +126,12 @@ pub fn cdl_inverted_hammer(
         if len <= lookback {
             return Err(KandError::InsufficientData);
         }
-        if param_factor <= 0.0 {
+        if opt_factor <= 0.0 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_open[i].is_nan()
@@ -146,10 +146,10 @@ pub fn cdl_inverted_hammer(
 
     // Calculate initial SMA
     let mut sum = 0.0;
-    for i in 0..param_period {
+    for i in 0..opt_period {
         sum += real_body_length(input_open[i], input_close[i]);
     }
-    let mut body_avg = sum / param_period as TAFloat;
+    let mut body_avg = sum / opt_period as TAFloat;
     output_body_avg[lookback] = body_avg;
 
     // Process remaining candles
@@ -160,8 +160,8 @@ pub fn cdl_inverted_hammer(
             input_low[i],
             input_close[i],
             body_avg,
-            param_period,
-            param_factor,
+            opt_period,
+            opt_factor,
         )?;
         output_signals[i] = signal;
         output_body_avg[i] = new_body_avg;
@@ -188,7 +188,7 @@ pub fn cdl_inverted_hammer(
 /// 2. Update EMA of body sizes using: EMA = (body - `prev_ema`) * k + `prev_ema`
 /// 3. Check pattern conditions:
 ///    - Small body: body <= `body_avg` && body > 0
-///    - Long upper shadow: `upper_shadow` >= `param_factor` * body
+///    - Long upper shadow: `upper_shadow` >= `opt_factor` * body
 ///    - Minimal lower shadow: `lower_shadow` <= body
 ///    - Body in lower half: max(open, close) < (high + low)/2
 ///
@@ -198,8 +198,8 @@ pub fn cdl_inverted_hammer(
 /// * `input_low` - Low price of the candlestick
 /// * `input_close` - Closing price of the candlestick
 /// * `prev_body_avg` - Previous EMA value of body sizes
-/// * `param_period` - Period for EMA calculation
-/// * `param_factor` - Minimum ratio of upper shadow to body length
+/// * `opt_period` - Period for EMA calculation
+/// * `opt_factor` - Minimum ratio of upper shadow to body length
 ///
 /// # Returns
 /// * `Ok((TAInt, TAFloat))` - Tuple containing:
@@ -208,9 +208,9 @@ pub fn cdl_inverted_hammer(
 ///
 /// # Errors
 /// * [`KandError::InvalidParameter`] - If parameters are invalid:
-///   - `param_period` is less than 2
-///   - `param_factor` is less than or equal to zero
-/// * [`KandError::NaNDetected`] - If any input value is NaN (when `deep-check` enabled)
+///   - `opt_period` is less than 2
+///   - `opt_factor` is less than or equal to zero
+/// * [`KandError::NaNDetected`] - If any input value is NaN (when `check-nan` enabled)
 /// * [`KandError::ConversionError`] - If numeric conversion fails
 ///
 /// # Examples
@@ -234,10 +234,10 @@ pub fn cdl_inverted_hammer_inc(
     input_low: TAFloat,
     input_close: TAFloat,
     prev_body_avg: TAFloat,
-    param_period: usize,
-    param_factor: TAFloat,
+    opt_period: usize,
+    opt_factor: TAFloat,
 ) -> Result<(TAInt, TAFloat), KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_open.is_nan()
             || input_high.is_nan()
@@ -252,12 +252,12 @@ pub fn cdl_inverted_hammer_inc(
     let body = real_body_length(input_open, input_close);
     let up_shadow = upper_shadow_length(input_high, input_open, input_close);
     let down_shadow = lower_shadow_length(input_low, input_open, input_close);
-    let k = period_to_k(param_period)?;
+    let k = period_to_k(opt_period)?;
     let body_avg = (body - prev_body_avg).mul_add(k, prev_body_avg);
 
     // Check for Inverted Hammer pattern
     let is_small_body = body <= body_avg && body > 0.0;
-    let has_long_upper_shadow = up_shadow >= param_factor * body;
+    let has_long_upper_shadow = up_shadow >= opt_factor * body;
     let has_minimal_lower_shadow = down_shadow <= body;
     let body_in_lower_half =
         TAFloat::max(input_open, input_close) < f64::midpoint(input_high, input_low);
@@ -306,8 +306,8 @@ mod tests {
             96067.0, 96054.0, 95951.4, 95951.5,
         ];
 
-        let param_period = 14;
-        let param_factor = 2.0;
+        let opt_period = 14;
+        let opt_factor = 2.0;
         let mut output_signals = vec![0i64; input_open.len()];
         let mut output_body_avg = vec![0.0; input_open.len()];
 
@@ -316,8 +316,8 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
-            param_factor,
+            opt_period,
+            opt_factor,
             &mut output_signals,
             &mut output_body_avg,
         )
@@ -349,8 +349,8 @@ mod tests {
                 input_low[i],
                 input_close[i],
                 prev_body_avg,
-                param_period,
-                param_factor,
+                opt_period,
+                opt_factor,
             )
             .unwrap();
             assert_eq!(signal, output_signals[i]);

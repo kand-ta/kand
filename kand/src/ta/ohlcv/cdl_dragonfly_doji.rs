@@ -41,7 +41,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// 2. Calculate the total range (high - low)
 /// 3. Calculate the upper shadow length
 /// 4. Check if:
-///    - Body is small relative to range (using `param_body_percent`)
+///    - Body is small relative to range (using `opt_body_percent`)
 ///    - Upper shadow is minimal (less than or equal to body length)
 ///
 /// # Arguments
@@ -49,7 +49,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices for each period
 /// * `input_low` - Array of low prices for each period
 /// * `input_close` - Array of closing prices for each period
-/// * `param_body_percent` - Maximum body size as percentage of total range (typically 5%)
+/// * `opt_body_percent` - Maximum body size as percentage of total range (typically 5%)
 /// * `output_signals` - Output array that will contain the pattern signals:
 ///   - 100: Bullish Dragonfly Doji pattern detected
 ///   - 0: No pattern detected
@@ -59,8 +59,8 @@ pub const fn lookback() -> Result<usize, KandError> {
 ///
 /// # Errors
 /// * [`KandError::LengthMismatch`] - If input arrays have different lengths
-/// * [`KandError::InvalidParameter`] - If `param_body_percent` is less than or equal to zero
-/// * [`KandError::NaNDetected`] - If any input contains NaN values (when `deep-check` feature enabled)
+/// * [`KandError::InvalidParameter`] - If `opt_body_percent` is less than or equal to zero
+/// * [`KandError::NaNDetected`] - If any input contains NaN values (when `check-nan` feature enabled)
 ///
 /// # Examples
 /// ```
@@ -87,7 +87,7 @@ pub fn cdl_dragonfly_doji(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_body_percent: TAFloat,
+    opt_body_percent: TAFloat,
     output_signals: &mut [TAInt],
 ) -> Result<(), KandError> {
     let len = input_open.len();
@@ -104,12 +104,12 @@ pub fn cdl_dragonfly_doji(
         }
 
         // Check parameters
-        if param_body_percent <= 0.0 {
+        if opt_body_percent <= 0.0 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             if input_open[i].is_nan()
@@ -129,7 +129,7 @@ pub fn cdl_dragonfly_doji(
             input_high[i],
             input_low[i],
             input_close[i],
-            param_body_percent,
+            opt_body_percent,
         )?;
     }
 
@@ -144,7 +144,7 @@ pub fn cdl_dragonfly_doji(
 ///
 /// # Calculation
 /// 1. Calculate real body length and total range
-/// 2. Check if body is small relative to range (using `param_body_percent`)
+/// 2. Check if body is small relative to range (using `opt_body_percent`)
 /// 3. Verify upper shadow is minimal
 /// 4. Return appropriate signal value
 ///
@@ -153,7 +153,7 @@ pub fn cdl_dragonfly_doji(
 /// * `input_high` - High price of the candlestick
 /// * `input_low` - Low price of the candlestick
 /// * `input_close` - Closing price of the candlestick
-/// * `param_body_percent` - Maximum body size as percentage of total range
+/// * `opt_body_percent` - Maximum body size as percentage of total range
 ///
 /// # Returns
 /// * `Ok(TAInt)` - Signal value where:
@@ -161,8 +161,8 @@ pub fn cdl_dragonfly_doji(
 ///   - 0: No pattern detected
 ///
 /// # Errors
-/// * [`KandError::InvalidParameter`] - If `param_body_percent` is less than or equal to zero
-/// * [`KandError::NaNDetected`] - If any input value is NaN (when `deep-check` feature enabled)
+/// * [`KandError::InvalidParameter`] - If `opt_body_percent` is less than or equal to zero
+/// * [`KandError::NaNDetected`] - If any input value is NaN (when `check-nan` feature enabled)
 /// * [`KandError::ConversionError`] - If numeric conversion fails
 ///
 /// # Examples
@@ -174,7 +174,7 @@ pub fn cdl_dragonfly_doji(
 ///     102.0, // input_high
 ///     98.0,  // input_low
 ///     100.1, // input_close
-///     5.0,   // param_body_percent
+///     5.0,   // opt_body_percent
 /// )
 /// .unwrap();
 /// ```
@@ -183,17 +183,17 @@ pub fn cdl_dragonfly_doji_inc(
     input_high: TAFloat,
     input_low: TAFloat,
     input_close: TAFloat,
-    param_body_percent: TAFloat,
+    opt_body_percent: TAFloat,
 ) -> Result<TAInt, KandError> {
     #[cfg(feature = "check")]
     {
         // Check parameters
-        if param_body_percent <= 0.0 {
+        if opt_body_percent <= 0.0 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_open.is_nan() || input_high.is_nan() || input_low.is_nan() || input_close.is_nan()
         {
@@ -206,7 +206,7 @@ pub fn cdl_dragonfly_doji_inc(
     let up_shadow = upper_shadow_length(input_high, input_open, input_close);
 
     // Check for Dragonfly Doji pattern
-    let is_doji_body = range > 0.0 && body <= range * param_body_percent / 100.0;
+    let is_doji_body = range > 0.0 && body <= range * opt_body_percent / 100.0;
     let has_minimal_upper_shadow = up_shadow <= body;
 
     let signal = if is_doji_body && has_minimal_upper_shadow {
@@ -258,7 +258,7 @@ mod tests {
             97384.1,
         ];
 
-        let param_body_percent = 5.0;
+        let opt_body_percent = 5.0;
         let mut output_signals = vec![0i64; input_open.len()];
 
         cdl_dragonfly_doji(
@@ -266,7 +266,7 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_body_percent,
+            opt_body_percent,
             &mut output_signals,
         )
         .unwrap();
@@ -283,7 +283,7 @@ mod tests {
                 input_high[i],
                 input_low[i],
                 input_close[i],
-                param_body_percent,
+                opt_body_percent,
             )
             .unwrap();
             assert_eq!(signal, output_signals[i]);

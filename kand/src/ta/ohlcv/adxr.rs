@@ -4,7 +4,7 @@ use crate::{KandError, TAFloat};
 /// Calculates the lookback period required for ADXR calculation
 ///
 /// # Arguments
-/// * `param_period` - The period parameter for ADX calculation (typically 14)
+/// * `opt_period` - The period parameter for ADX calculation (typically 14)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The number of data points needed before first valid ADXR value
@@ -19,15 +19,15 @@ use crate::{KandError, TAFloat};
 /// let lookback_period = lookback(period).unwrap();
 /// assert_eq!(lookback_period, 40); // 14 * 3 - 2 = 40
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period * 3 - 2)
+    Ok(opt_period * 3 - 2)
 }
 
 /// Calculates the Average Directional Index Rating (ADXR) for the entire input array
@@ -48,7 +48,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - Period for ADX calculation
+/// * `opt_period` - Period for ADX calculation
 /// * `output_adxr` - Output array for ADXR values
 /// * `output_adx` - Output array for ADX values
 /// * `output_smoothed_plus_dm` - Output array for smoothed +DM values
@@ -63,7 +63,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
 /// * `KandError::InvalidParameter` - If period is less than 2
 /// * `KandError::InsufficientData` - If input length is less than required lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature enabled)
 ///
 /// # Example
 /// ```
@@ -96,7 +96,7 @@ pub fn adxr(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_adxr: &mut [TAFloat],
     output_adx: &mut [TAFloat],
     output_smoothed_plus_dm: &mut [TAFloat],
@@ -104,7 +104,7 @@ pub fn adxr(
     output_smoothed_tr: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -131,7 +131,7 @@ pub fn adxr(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -146,7 +146,7 @@ pub fn adxr(
         input_high,
         input_low,
         input_close,
-        param_period,
+        opt_period,
         output_adx,
         output_smoothed_plus_dm,
         output_smoothed_minus_dm,
@@ -156,7 +156,7 @@ pub fn adxr(
     // Calculate ADXR = (Current ADX + ADX period days ago) / 2
     // First valid value should be at index lookback (period * 3 - 2)
     for i in lookback..len {
-        output_adxr[i] = f64::midpoint(output_adx[i], output_adx[i - param_period + 1]);
+        output_adxr[i] = f64::midpoint(output_adx[i], output_adx[i - opt_period + 1]);
     }
 
     // Fill initial values with NAN
@@ -189,7 +189,7 @@ pub fn adxr(
 /// * `prev_smoothed_plus_dm` - Previous smoothed +DM value
 /// * `prev_smoothed_minus_dm` - Previous smoothed -DM value
 /// * `prev_smoothed_tr` - Previous smoothed TR value
-/// * `param_period` - Period for ADX calculation
+/// * `opt_period` - Period for ADX calculation
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing:
@@ -201,7 +201,7 @@ pub fn adxr(
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If period is less than 2
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature enabled)
 ///
 /// # Example
 /// ```
@@ -218,7 +218,7 @@ pub fn adxr(
 ///     0.5,   // prev_smoothed_plus_dm
 ///     0.3,   // prev_smoothed_minus_dm
 ///     1.2,   // prev_smoothed_tr
-///     14,    // param_period
+///     14,    // opt_period
 /// )
 /// .unwrap();
 /// ```
@@ -233,17 +233,17 @@ pub fn adxr_inc(
     prev_smoothed_plus_dm: TAFloat,
     prev_smoothed_minus_dm: TAFloat,
     prev_smoothed_tr: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_high.is_nan()
@@ -272,7 +272,7 @@ pub fn adxr_inc(
             prev_smoothed_plus_dm,
             prev_smoothed_minus_dm,
             prev_smoothed_tr,
-            param_period,
+            opt_period,
         )?;
 
     let output_adxr = f64::midpoint(output_adx, prev_adx_period_ago);
@@ -322,7 +322,7 @@ mod tests {
             35094.6, 35114.4, 35094.5, 35116.0, 35105.4, 35050.7, 35031.3, 35008.1, 35021.4,
             35048.4, 35080.1, 35043.6, 34962.7, 34970.1, 34980.1,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_adxr = vec![0.0; input_high.len()];
         let mut output_adx = vec![0.0; input_high.len()];
         let mut output_smoothed_plus_dm = vec![0.0; input_high.len()];
@@ -333,7 +333,7 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
+            opt_period,
             &mut output_adxr,
             &mut output_adx,
             &mut output_smoothed_plus_dm,
@@ -343,7 +343,7 @@ mod tests {
         .unwrap();
 
         // First (3*period-2) values should be NaN
-        for value in output_adxr.iter().take(3 * param_period - 2) {
+        for value in output_adxr.iter().take(3 * opt_period - 2) {
             assert!(value.is_nan());
         }
 
@@ -371,7 +371,7 @@ mod tests {
             19.478_837_411_178_546,
         ];
 
-        let first_valid_idx = 3 * param_period - 2;
+        let first_valid_idx = 3 * opt_period - 2;
         for (i, expected) in expected_values.iter().enumerate() {
             assert_relative_eq!(
                 output_adxr[i + first_valid_idx],
@@ -383,9 +383,9 @@ mod tests {
         // Calculate and verify incremental values starting from index period * 4 - 3
         // This starting index is required because:
         // 1. First period * 3 - 2 values are NaN (base ADXR calculation requirement)
-        // 2. Need additional period - 1 values for i - param_period + 1 lookback
+        // 2. Need additional period - 1 values for i - opt_period + 1 lookback
         // Total: (period * 3 - 2) - ( - period + 1) = period * 4 - 3
-        for i in (param_period * 4 - 3)..input_high.len() {
+        for i in (opt_period * 4 - 3)..input_high.len() {
             let result = adxr_inc(
                 input_high[i],
                 input_low[i],
@@ -393,11 +393,11 @@ mod tests {
                 input_low[i - 1],
                 input_close[i - 1],
                 output_adx[i - 1],
-                output_adx[i - param_period + 1], // ADX value from period days ago
+                output_adx[i - opt_period + 1], // ADX value from period days ago
                 output_smoothed_plus_dm[i - 1],
                 output_smoothed_minus_dm[i - 1],
                 output_smoothed_tr[i - 1],
-                param_period,
+                opt_period,
             )
             .unwrap();
 

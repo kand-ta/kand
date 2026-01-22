@@ -7,13 +7,13 @@ use crate::{KandError, TAFloat};
 /// Returns the number of data points needed before the first valid DX value can be calculated.
 ///
 /// # Arguments
-/// * `param_period` - The period used for DX calculation (typically 14)
+/// * `opt_period` - The period used for DX calculation (typically 14)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period if successful, or error if parameters are invalid
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Example
 /// ```
@@ -23,15 +23,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = dx::lookback(period).unwrap();
 /// assert_eq!(lookback, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculate Directional Movement Index (DX) for the entire input array
@@ -48,13 +48,13 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Calculation Steps
 /// 1. Calculate +DI and -DI for the given period
 /// 2. Calculate DX using the formula above
-/// 3. First `param_period` values are set to NaN
+/// 3. First `opt_period` values are set to NaN
 ///
 /// # Arguments
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - Period for DX calculation (typically 14)
+/// * `opt_period` - Period for DX calculation (typically 14)
 /// * `output_dx` - Output array to store DX values
 /// * `output_smoothed_plus_dm` - Output array for smoothed +DM values
 /// * `output_smoothed_minus_dm` - Output array for smoothed -DM values
@@ -66,9 +66,9 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input arrays are empty
 /// * `KandError::LengthMismatch` - If input/output arrays have different lengths
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 /// * `KandError::InsufficientData` - If input length <= lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -77,7 +77,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// let input_high = vec![24.20, 24.07, 24.04, 23.87, 23.67, 23.59];
 /// let input_low = vec![23.85, 23.72, 23.64, 23.37, 23.46, 23.18];
 /// let input_close = vec![23.89, 23.95, 23.67, 23.78, 23.50, 23.32];
-/// let param_period = 3;
+/// let opt_period = 3;
 /// let mut output_dx = vec![0.0; 6];
 /// let mut output_smoothed_plus_dm = vec![0.0; 6];
 /// let mut output_smoothed_minus_dm = vec![0.0; 6];
@@ -87,7 +87,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///     &input_high,
 ///     &input_low,
 ///     &input_close,
-///     param_period,
+///     opt_period,
 ///     &mut output_dx,
 ///     &mut output_smoothed_plus_dm,
 ///     &mut output_smoothed_minus_dm,
@@ -99,14 +99,14 @@ pub fn dx(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_dx: &mut [TAFloat],
     output_smoothed_plus_dm: &mut [TAFloat],
     output_smoothed_minus_dm: &mut [TAFloat],
     output_smoothed_tr: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -132,7 +132,7 @@ pub fn dx(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -150,7 +150,7 @@ pub fn dx(
         input_high,
         input_low,
         input_close,
-        param_period,
+        opt_period,
         &mut plus_di_values,
         output_smoothed_plus_dm,
         output_smoothed_tr,
@@ -159,7 +159,7 @@ pub fn dx(
         input_high,
         input_low,
         input_close,
-        param_period,
+        opt_period,
         &mut minus_di_values,
         output_smoothed_minus_dm,
         output_smoothed_tr,
@@ -198,7 +198,7 @@ pub fn dx(
 /// * `prev_smoothed_plus_dm` - Previous smoothed +DM value
 /// * `prev_smoothed_minus_dm` - Previous smoothed -DM value
 /// * `prev_smoothed_tr` - Previous smoothed TR value
-/// * `param_period` - Period for DX calculation (typically 14)
+/// * `opt_period` - Period for DX calculation (typically 14)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing:
@@ -208,8 +208,8 @@ pub fn dx(
 ///   - New smoothed TR
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
-/// * `KandError::NaNDetected` - If any input value is NaN (when `deep-check` enabled)
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
+/// * `KandError::NaNDetected` - If any input value is NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -223,7 +223,7 @@ pub fn dx(
 /// let prev_smoothed_plus_dm = 0.5;
 /// let prev_smoothed_minus_dm = 0.3;
 /// let prev_smoothed_tr = 1.2;
-/// let param_period = 14;
+/// let opt_period = 14;
 ///
 /// let (output_dx, output_smoothed_plus_dm, output_smoothed_minus_dm, output_smoothed_tr) =
 ///     dx::dx_inc(
@@ -235,7 +235,7 @@ pub fn dx(
 ///         prev_smoothed_plus_dm,
 ///         prev_smoothed_minus_dm,
 ///         prev_smoothed_tr,
-///         param_period,
+///         opt_period,
 ///     )
 ///     .unwrap();
 /// ```
@@ -248,7 +248,7 @@ pub fn dx_inc(
     prev_smoothed_plus_dm: TAFloat,
     prev_smoothed_minus_dm: TAFloat,
     prev_smoothed_tr: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
@@ -256,12 +256,12 @@ pub fn dx_inc(
         // DX requires at least 2 periods:
         // - One for initial DM and TR calculations (needs previous prices)
         // - One for the current period
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_high.is_nan()
@@ -285,7 +285,7 @@ pub fn dx_inc(
         prev_close,
         prev_smoothed_plus_dm,
         prev_smoothed_tr,
-        param_period,
+        opt_period,
     )?;
 
     let (minus_di, output_smoothed_minus_dm, _) = minus_di::minus_di_inc(
@@ -296,7 +296,7 @@ pub fn dx_inc(
         prev_close,
         prev_smoothed_minus_dm,
         prev_smoothed_tr,
-        param_period,
+        opt_period,
     )?;
 
     let output_dx = 100.0 * (plus_di - minus_di).abs() / (plus_di + minus_di);
@@ -332,7 +332,7 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0,
         ];
-        let param_period = 14;
+        let opt_period = 14;
         let mut output_dx = vec![0.0; 19];
         let mut output_smoothed_plus_dm = vec![0.0; 19];
         let mut output_smoothed_minus_dm = vec![0.0; 19];
@@ -342,7 +342,7 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
+            opt_period,
             &mut output_dx,
             &mut output_smoothed_plus_dm,
             &mut output_smoothed_minus_dm,
@@ -350,8 +350,8 @@ mod tests {
         )
         .unwrap();
 
-        // First param_period values should be NaN
-        for value in output_dx.iter().take(param_period) {
+        // First opt_period values should be NaN
+        for value in output_dx.iter().take(opt_period) {
             assert!(value.is_nan());
         }
 
@@ -368,7 +368,7 @@ mod tests {
         }
 
         // Calculate and verify incremental values
-        for i in param_period + 1..input_high.len() {
+        for i in opt_period + 1..input_high.len() {
             let (result, new_smoothed_plus_dm, new_smoothed_minus_dm, new_smoothed_tr) = dx_inc(
                 input_high[i],
                 input_low[i],
@@ -378,7 +378,7 @@ mod tests {
                 output_smoothed_plus_dm[i - 1],
                 output_smoothed_minus_dm[i - 1],
                 output_smoothed_tr[i - 1],
-                param_period,
+                opt_period,
             )
             .unwrap();
 

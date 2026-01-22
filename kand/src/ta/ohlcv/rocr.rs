@@ -5,13 +5,13 @@ use crate::{KandError, TAFloat};
 /// Returns the number of historical data points needed for ROCR calculation, which equals the input period.
 ///
 /// # Arguments
-/// * `param_period` - The time period used in ROCR calculation, must be >= 2
+/// * `opt_period` - The time period used in ROCR calculation, must be >= 2
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period on success
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 ///
 /// # Example
 /// ```
@@ -19,15 +19,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = rocr::lookback(10).unwrap();
 /// assert_eq!(lookback, 10);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period)
+    Ok(opt_period)
 }
 
 /// Calculates Rate of Change Ratio (ROCR) for a price series.
@@ -47,7 +47,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_price` - Array of price values for calculation
-/// * `param_period` - Number of periods to look back (n), must be >= 2
+/// * `opt_period` - Number of periods to look back (n), must be >= 2
 /// * `output_rocr` - Array to store calculated ROCR values
 ///
 /// # Returns
@@ -56,29 +56,29 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input array is empty
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths
-/// * `KandError::InvalidParameter` - If `param_period` is less than 2
+/// * `KandError::InvalidParameter` - If `opt_period` is less than 2
 /// * `KandError::InsufficientData` - If input length is less than or equal to lookback period
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
 /// use kand::ohlcv::rocr;
 ///
 /// let input_price = vec![10.0, 10.5, 11.2, 10.8, 11.5];
-/// let param_period = 2;
+/// let opt_period = 2;
 /// let mut output_rocr = vec![0.0; 5];
 ///
-/// rocr::rocr(&input_price, param_period, &mut output_rocr).unwrap();
-/// // First param_period values will be NaN
+/// rocr::rocr(&input_price, opt_period, &mut output_rocr).unwrap();
+/// // First opt_period values will be NaN
 /// // Remaining values show ratio between current and historical prices
 /// ```
 pub fn rocr(
     input_price: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_rocr: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_price.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -98,7 +98,7 @@ pub fn rocr(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_price {
             if price.is_nan() {
@@ -109,7 +109,7 @@ pub fn rocr(
 
     // Calculate ROCR values
     for i in lookback..len {
-        output_rocr[i] = input_price[i] / input_price[i - param_period];
+        output_rocr[i] = input_price[i] / input_price[i - opt_period];
     }
 
     // Fill initial values with NAN
@@ -127,13 +127,13 @@ pub fn rocr(
 ///
 /// # Arguments
 /// * `input` - Current price value
-/// * `prev` - Price value from `param_period` periods ago
+/// * `prev` - Price value from `opt_period` periods ago
 ///
 /// # Returns
 /// * `Result<TAFloat, KandError>` - The calculated ROCR value
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - If any input value is NaN (when "`deep-check`" feature is enabled)
+/// * `KandError::NaNDetected` - If any input value is NaN (when "`check-nan`" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -146,7 +146,7 @@ pub fn rocr(
 /// // rocr_value will be 1.25 (15.0 / 12.0)
 /// ```
 pub fn rocr_inc(input: TAFloat, prev: TAFloat) -> Result<TAFloat, KandError> {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input.is_nan() || prev.is_nan() {
             return Err(KandError::NaNDetected);
@@ -169,10 +169,10 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6,
         ];
-        let param_period = 10;
+        let opt_period = 10;
         let mut output_rocr = vec![0.0; input.len()];
 
-        rocr(&input, param_period, &mut output_rocr).unwrap();
+        rocr(&input, opt_period, &mut output_rocr).unwrap();
 
         // First 10 values should be NaN
         for value in output_rocr.iter().take(10) {
@@ -198,8 +198,8 @@ mod tests {
         }
 
         // Test incremental calculation matches regular calculation
-        for i in param_period..input.len() {
-            let result = rocr_inc(input[i], input[i - param_period]).unwrap();
+        for i in opt_period..input.len() {
+            let result = rocr_inc(input[i], input[i - opt_period]).unwrap();
             assert_relative_eq!(result, output_rocr[i], epsilon = 0.0001);
         }
     }

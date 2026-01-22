@@ -8,13 +8,13 @@ use crate::{KandError, TAFloat};
 /// can be calculated. It is determined by combining the lookback periods of three EMA calculations and one ROC calculation.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for EMA calculations in TRIX. Must be >= 2.
+/// * `opt_period` - The time period used for EMA calculations in TRIX. Must be >= 2.
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period if successful, or an error if parameters are invalid
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2 (when "check" feature is enabled)
+/// * `KandError::InvalidParameter` - If `opt_period` < 2 (when "check" feature is enabled)
 ///
 /// # Example
 /// ```
@@ -24,8 +24,8 @@ use crate::{KandError, TAFloat};
 /// let lookback = trix::lookback(period).unwrap();
 /// assert_eq!(lookback, 40); // 3 * EMA lookback + 1 ROC lookback
 /// ```
-pub fn lookback(param_period: usize) -> Result<usize, KandError> {
-    Ok(3 * ema::lookback(param_period)? + roc::lookback(1)?)
+pub fn lookback(opt_period: usize) -> Result<usize, KandError> {
+    Ok(3 * ema::lookback(opt_period)? + roc::lookback(1)?)
 }
 
 /// Calculates the Triple Exponential Moving Average Oscillator (TRIX)
@@ -50,7 +50,7 @@ pub fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input` - Array of price values to calculate TRIX
-/// * `param_period` - Number of periods for EMA calculations. Must be >= 2
+/// * `opt_period` - Number of periods for EMA calculations. Must be >= 2
 /// * `output` - Array to store calculated TRIX values. First lookback values will be NaN
 /// * `ema1_output` - Array to store first EMA values. First lookback values will be NaN
 /// * `ema2_output` - Array to store second EMA values. First lookback values will be NaN
@@ -62,9 +62,9 @@ pub fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - If input array is empty (with "check" feature)
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths (with "check" feature)
-/// * `KandError::InvalidParameter` - If `param_period` < 2 (with "check" feature)
+/// * `KandError::InvalidParameter` - If `opt_period` < 2 (with "check" feature)
 /// * `KandError::InsufficientData` - If input length <= lookback period (with "check" feature)
-/// * `KandError::NaNDetected` - If input contains NaN values (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If input contains NaN values (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -81,14 +81,14 @@ pub fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn trix(
     input: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output: &mut [TAFloat],
     ema1_output: &mut [TAFloat],
     ema2_output: &mut [TAFloat],
     ema3_output: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -112,7 +112,7 @@ pub fn trix(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for value in input {
             if value.is_nan() {
@@ -122,29 +122,29 @@ pub fn trix(
     }
 
     // Calculate first EMA
-    ema::ema(input, param_period, None, ema1_output)?;
+    ema::ema(input, opt_period, None, ema1_output)?;
 
     // Calculate second EMA
     ema::ema(
-        &ema1_output[param_period - 1..],
-        param_period,
+        &ema1_output[opt_period - 1..],
+        opt_period,
         None,
-        &mut ema2_output[param_period - 1..],
+        &mut ema2_output[opt_period - 1..],
     )?;
 
     // Calculate third EMA
     ema::ema(
-        &ema2_output[2 * (param_period - 1)..],
-        param_period,
+        &ema2_output[2 * (opt_period - 1)..],
+        opt_period,
         None,
-        &mut ema3_output[2 * (param_period - 1)..],
+        &mut ema3_output[2 * (opt_period - 1)..],
     )?;
 
     // Calculate TRIX using ROC
     roc::roc(
-        &ema3_output[3 * (param_period - 1)..],
+        &ema3_output[3 * (opt_period - 1)..],
         1,
-        &mut output[3 * (param_period - 1)..],
+        &mut output[3 * (opt_period - 1)..],
     )?;
 
     // Fill initial values with NAN
@@ -179,14 +179,14 @@ pub fn trix(
 /// * `prev_ema1` - Previous first EMA value
 /// * `prev_ema2` - Previous second EMA value
 /// * `prev_ema3` - Previous third EMA value
-/// * `param_period` - Period for EMA calculations. Must be >= 2
+/// * `opt_period` - Period for EMA calculations. Must be >= 2
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing (TRIX, `new_ema1`, `new_ema2`, `new_ema3`) if successful
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2 (with "check" feature)
-/// * `KandError::NaNDetected` - If any input value is NaN (with "`deep-check`" feature)
+/// * `KandError::InvalidParameter` - If `opt_period` < 2 (with "check" feature)
+/// * `KandError::NaNDetected` - If any input value is NaN (with "`check-nan`" feature)
 /// * `KandError::InvalidData` - If division by zero occurs during ROC calculation
 ///
 /// # Example
@@ -207,25 +207,25 @@ pub fn trix_inc(
     prev_ema1: TAFloat,
     prev_ema2: TAFloat,
     prev_ema3: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input.is_nan() || prev_ema1.is_nan() || prev_ema2.is_nan() || prev_ema3.is_nan() {
             return Err(KandError::NaNDetected);
         }
     }
 
-    let new_ema1 = ema::ema_inc(input, prev_ema1, param_period, None)?;
-    let new_ema2 = ema::ema_inc(new_ema1, prev_ema2, param_period, None)?;
-    let new_ema3 = ema::ema_inc(new_ema2, prev_ema3, param_period, None)?;
+    let new_ema1 = ema::ema_inc(input, prev_ema1, opt_period, None)?;
+    let new_ema2 = ema::ema_inc(new_ema1, prev_ema2, opt_period, None)?;
+    let new_ema3 = ema::ema_inc(new_ema2, prev_ema3, opt_period, None)?;
     let trix = roc::roc_inc(new_ema3, prev_ema3)?;
 
     Ok((trix, new_ema1, new_ema2, new_ema3))
@@ -244,7 +244,7 @@ mod tests {
             35184.7, 35175.1, 35229.9, 35212.5, 35160.7, 35090.3, 35041.2, 34999.3, 35013.4,
             35069.0, 35024.6,
         ];
-        let param_period = 3;
+        let opt_period = 3;
         let mut output = vec![0.0; input.len()];
         let mut ema1 = vec![0.0; input.len()];
         let mut ema2 = vec![0.0; input.len()];
@@ -252,7 +252,7 @@ mod tests {
 
         trix(
             &input,
-            param_period,
+            opt_period,
             &mut output,
             &mut ema1,
             &mut ema2,
@@ -293,7 +293,7 @@ mod tests {
 
         for i in 11..15 {
             let (trix_val, new_ema1, new_ema2, new_ema3) =
-                trix_inc(input[i], prev_ema1, prev_ema2, prev_ema3, param_period).unwrap();
+                trix_inc(input[i], prev_ema1, prev_ema2, prev_ema3, opt_period).unwrap();
 
             assert_relative_eq!(trix_val, output[i], epsilon = 0.0001);
 

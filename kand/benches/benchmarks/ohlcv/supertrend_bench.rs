@@ -1,5 +1,6 @@
-use criterion::{BenchmarkId, Criterion, black_box, criterion_group};
+use criterion::{BenchmarkId, Criterion, criterion_group};
 use kand::ohlcv::supertrend::supertrend;
+use std::hint::black_box;
 
 use crate::helper::generate_test_data;
 

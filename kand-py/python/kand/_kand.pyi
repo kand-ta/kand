@@ -1185,7 +1185,7 @@ def dx(high, low, close, period):
     """
     ...
 
-def dx_inc(input_high, input_low, prev_high, prev_low, prev_close, prev_smoothed_plus_dm, prev_smoothed_minus_dm, prev_smoothed_tr, param_period):
+def dx_inc(input_high, input_low, prev_high, prev_low, prev_close, prev_smoothed_plus_dm, prev_smoothed_minus_dm, prev_smoothed_tr, opt_period):
     """
     Calculates the latest DX value incrementally.
 
@@ -1203,7 +1203,7 @@ def dx_inc(input_high, input_low, prev_high, prev_low, prev_close, prev_smoothed
         prev_smoothed_plus_dm (float): Previous smoothed +DM value.
         prev_smoothed_minus_dm (float): Previous smoothed -DM value.
         prev_smoothed_tr (float): Previous smoothed TR value.
-        param_period (int): Period for DX calculation (typically 14).
+        opt_period (int): Period for DX calculation (typically 14).
 
     Returns:
         tuple: A tuple containing:

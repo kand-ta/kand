@@ -11,7 +11,7 @@ use crate::{
 /// the specified period parameter.
 ///
 /// # Arguments
-/// * `param_period` - The time period used for calculations (must be >= 2)
+/// * `opt_period` - The time period used for calculations (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period on success, or error on failure
@@ -26,8 +26,8 @@ use crate::{
 /// let lookback = bbands::lookback(period).unwrap();
 /// assert_eq!(lookback, 19);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
-    sma::lookback(param_period)
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
+    sma::lookback(opt_period)
 }
 
 /// Calculates Bollinger Bands for a price series.
@@ -57,9 +57,9 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input_price` - Slice of input price values
-/// * `param_period` - The time period for calculations (must be >= 2)
-/// * `param_dev_up` - Number of standard deviations for upper band
-/// * `param_dev_down` - Number of standard deviations for lower band
+/// * `opt_period` - The time period for calculations (must be >= 2)
+/// * `opt_dev_up` - Number of standard deviations for upper band
+/// * `opt_dev_down` - Number of standard deviations for lower band
 /// * `output_upper` - Buffer to store upper band values
 /// * `output_middle` - Buffer to store middle band values
 /// * `output_lower` - Buffer to store lower band values
@@ -108,9 +108,9 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn bbands(
     input_price: &[TAFloat],
-    param_period: usize,
-    param_dev_up: TAFloat,
-    param_dev_down: TAFloat,
+    opt_period: usize,
+    opt_dev_up: TAFloat,
+    opt_dev_down: TAFloat,
     output_upper: &mut [TAFloat],
     output_middle: &mut [TAFloat],
     output_lower: &mut [TAFloat],
@@ -120,7 +120,7 @@ pub fn bbands(
     output_sum_sq: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_price.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -147,7 +147,7 @@ pub fn bbands(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input_price {
             if price.is_nan() {
@@ -157,12 +157,12 @@ pub fn bbands(
     }
 
     // Calculate SMA first
-    sma::sma(input_price, param_period, output_sma)?;
+    sma::sma(input_price, opt_period, output_sma)?;
 
     // Calculate variance
     var::var(
         input_price,
-        param_period,
+        opt_period,
         output_var,
         output_sum,
         output_sum_sq,
@@ -173,8 +173,8 @@ pub fn bbands(
         let std_dev = output_var[i].sqrt();
 
         // Calculate upper and lower bands using standard deviations
-        output_upper[i] = param_dev_up.mul_add(std_dev, output_sma[i]);
-        output_lower[i] = param_dev_down.mul_add(-std_dev, output_sma[i]);
+        output_upper[i] = opt_dev_up.mul_add(std_dev, output_sma[i]);
+        output_lower[i] = opt_dev_down.mul_add(-std_dev, output_sma[i]);
     }
 
     // Fill initial values with NAN
@@ -209,9 +209,9 @@ pub fn bbands(
 /// * `prev_sum` - The previous sum for variance calculation
 /// * `prev_sum_sq` - The previous sum of squares for variance calculation
 /// * `input_old_price` - The oldest price value to be removed from the period
-/// * `param_period` - The time period for calculations (must be >= 2)
-/// * `param_dev_up` - Number of standard deviations for upper band
-/// * `param_dev_down` - Number of standard deviations for lower band
+/// * `opt_period` - The time period for calculations (must be >= 2)
+/// * `opt_dev_up` - Number of standard deviations for upper band
+/// * `opt_dev_down` - Number of standard deviations for lower band
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat, TAFloat, TAFloat, TAFloat), KandError>` - A tuple containing:
@@ -247,18 +247,18 @@ pub fn bbands_inc(
     prev_sum: TAFloat,
     prev_sum_sq: TAFloat,
     input_old_price: TAFloat,
-    param_period: usize,
-    param_dev_up: TAFloat,
-    param_dev_down: TAFloat,
+    opt_period: usize,
+    opt_dev_up: TAFloat,
+    opt_dev_down: TAFloat,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_price.is_nan()
             || prev_sma.is_nan()
@@ -268,13 +268,13 @@ pub fn bbands_inc(
         {
             return Err(KandError::NaNDetected);
         }
-        if param_dev_up.is_nan() || param_dev_down.is_nan() {
+        if opt_dev_up.is_nan() || opt_dev_down.is_nan() {
             return Err(KandError::NaNDetected);
         }
     }
 
     // Calculate new SMA using incremental SMA
-    let new_sma = sma::sma_inc(prev_sma, input_price, input_old_price, param_period)?;
+    let new_sma = sma::sma_inc(prev_sma, input_price, input_old_price, opt_period)?;
 
     // Calculate new variance using incremental variance
     let (new_variance, new_sum, new_sum_sq) = var::var_inc(
@@ -282,12 +282,12 @@ pub fn bbands_inc(
         prev_sum,
         prev_sum_sq,
         input_old_price,
-        param_period,
+        opt_period,
     )?;
 
     let std_dev = new_variance.sqrt();
-    let upper = param_dev_up.mul_add(std_dev, new_sma);
-    let lower = param_dev_down.mul_add(-std_dev, new_sma);
+    let upper = opt_dev_up.mul_add(std_dev, new_sma);
+    let lower = opt_dev_down.mul_add(-std_dev, new_sma);
 
     Ok((upper, new_sma, lower, new_sma, new_sum, new_sum_sq))
 }
@@ -308,9 +308,9 @@ mod tests {
             35154.0, 35216.3, 35211.8, 35158.4, 35172.0, 35176.7, 35113.3, 35114.7, 35129.3,
         ];
 
-        let param_period = 20;
-        let param_dev_up = 2.0;
-        let param_dev_down = 2.0;
+        let opt_period = 20;
+        let opt_dev_up = 2.0;
+        let opt_dev_down = 2.0;
         let mut output_upper = vec![0.0; input_price.len()];
         let mut output_middle = vec![0.0; input_price.len()];
         let mut output_lower = vec![0.0; input_price.len()];
@@ -321,9 +321,9 @@ mod tests {
 
         bbands(
             &input_price,
-            param_period,
-            param_dev_up,
-            param_dev_down,
+            opt_period,
+            opt_dev_up,
+            opt_dev_down,
             &mut output_upper,
             &mut output_middle,
             &mut output_lower,
@@ -448,10 +448,10 @@ mod tests {
                 prev_sma,
                 prev_sum,
                 prev_sum_sq,
-                input_price[i - param_period],
-                param_period,
-                param_dev_up,
-                param_dev_down,
+                input_price[i - opt_period],
+                opt_period,
+                opt_dev_up,
+                opt_dev_down,
             )
             .unwrap();
 

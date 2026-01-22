@@ -1,0 +1,25 @@
+[package]
+name = "kand-wasm"
+version = "0.1.1"
+edition = "2024"
+
+[lib]
+name = "kand"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+kand = { workspace = true }
+wasm-bindgen = { workspace = true }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[features]
+default = ["f64", "i64", "check"]
+f32 = ["kand/f32"]
+f64 = ["kand/f64"]
+i32 = ["kand/i32"]
+i64 = ["kand/i64"]
+check = ["kand/check"]
+check-nan = ["kand/check-nan"]
+allow-nan = ["kand/allow-nan"]

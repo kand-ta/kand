@@ -8,6 +8,9 @@
   <a href="https://pypi.python.org/pypi/kand">
     <img src="https://img.shields.io/pypi/v/kand.svg" alt="PyPI Version"/>
   </a>
+  <a href="https://www.npmjs.com/package/kand">
+    <img src="https://img.shields.io/npm/v/kand.svg" alt="NPM Version"/>
+  </a>
   <a href="https://pypi.python.org/pypi/kand">
     <img src="https://img.shields.io/pypi/pyversions/kand.svg" alt="Python Versions"/>
   </a>
@@ -34,7 +37,8 @@
   <b>Kand: A Modern, High-Performance Technical Analysis Library</b>
 </h2>
 
-> ⚠️ **Development Status**: This project is under active development. APIs may change, and some features might not be fully implemented or tested yet. Contributions and feedback are welcome!
+> [!WARNING]
+> This project is under active development. APIs may change, and some features might not be fully implemented or tested yet. Contributions and feedback are welcome!
 
 <p align="center">
   <picture align="center">
@@ -75,7 +79,7 @@
 
 ### Python API
 
-The Python interface of `kand` leverages PyO3 for ultra-low latency bindings (~7ns overhead) to the Rust core, seamlessly integrating with NumPy for zero-copy operations and true thread-safe calculations. Below are examples for batch and incremental usage.
+The Python interface of `kand` leverages PyO3 for ultra-low latency bindings to the Rust core, seamlessly integrating with NumPy for zero-copy operations and true thread-safe calculations. Below are examples for batch and incremental usage.
 
 ```python
 import numpy as np
@@ -131,6 +135,37 @@ let new_ema = ema::ema_inc(new_price, prev_ema, 3, None)?;
 
 ---
 
+### JavaScript/TypeScript API
+
+The JavaScript/TypeScript interface provides WebAssembly bindings for high-performance technical analysis in web applications and Node.js projects. It delivers near-native performance with a clean, synchronous API.
+
+```typescript
+import { ema, emaInc } from 'kand';
+
+// Batch EMA computation for price series
+const prices = new Float64Array([10.0, 11.0, 12.0, 13.0, 14.0]);
+const emaValues = ema(prices, 3, null);
+console.log(emaValues);
+
+// Incremental EMA update for streaming data
+const prevEma = 13.5;
+const newPrice = 15.0;
+const newEma = emaInc(newPrice, prevEma, 3, null);
+console.log(newEma);
+
+// Custom smoothing factor
+const customK = 0.5;
+const customEma = emaInc(newPrice, prevEma, 3, customK);
+```
+
+**Key Features:**
+
+- **WebAssembly Performance**: Near-native speed through optimized WASM bindings.
+- **Type Safety**: Full TypeScript definitions with comprehensive JSDoc documentation.
+- **ES Module Standard**: Adheres to the ES module standard for native integration with modern JavaScript environments.
+
+---
+
 ## Setup
 
 ### Python
@@ -145,12 +180,21 @@ pip install kand
 
 You can take latest release from [`crates.io`](https://crates.io/crates/kand), or if you want to use the latest features / performance improvements point to the `main` branch of this repo.
 
-```toml
-[dependencies]
-kand = { git = "https://github.com/kand-ta/kand", rev = "<optional git tag>" }
+```bash
+cargo add kand
 ```
 
 Recommend Rust version `>=1.80`.
+
+### JavaScript/TypeScript
+
+For web applications and Node.js projects, install Kand via npm:
+
+```bash
+npm i kand
+```
+
+The package provides WebAssembly bindings for high-performance technical analysis in JavaScript and TypeScript environments.
 
 ## Functions List
 
@@ -161,7 +205,6 @@ Recommend Rust version `>=1.80`.
 - [x] **ADR** - Average Daily Range
 - [x] **ADX** - Average Directional Movement Index
 - [x] **ADXR** - Average Directional Movement Index Rating
-- [ ] **APO** - Absolute Price Oscillator
 - [x] **AROON** - Aroon
 - [x] **AROONOSC** - Aroon Oscillator
 - [x] **ATR** - Average True Range
@@ -176,16 +219,12 @@ Recommend Rust version `>=1.80`.
 - [x] **CDL_LONG_LOWER_SHADOW** - Long Lower Shadow
 - [x] **CDL_LONG_UPPER_SHADOW** - Long Upper Shadow
 - [x] **CDL_MARUBOZU** - Marubozu
-- [ ] **CMO** - Chande Momentum Oscillator
 - [x] **DEMA** - Double Exponential Moving Average
 - [x] **DX** - Directional Movement Index
 - [x] **EMA** - Exponential Moving Average
 - [x] **ECL** - Expanded Camarilla Levels **[Untested]**
 - [x] **HA** - Heikin Ashi Chart
-- [ ] **KAMA** - Kaufman Adaptive Moving Average
 - [x] **MACD** - Moving Average Convergence/Divergence **[Unstable]**
-- [ ] **MACDEXT** - MACD with controllable MA type
-- [ ] **MAMA** - MESA Adaptive Moving Average
 - [x] **MEDPRICE** - Median Price
 - [x] **MFI** - Money Flow Index **[No Incremental]**
 - [x] **MIDPOINT** - MidPoint over period
@@ -197,8 +236,6 @@ Recommend Rust version `>=1.80`.
 - [x] **OBV** - On Balance Volume
 - [x] **PLUS_DI** - Plus Directional Indicator
 - [x] **PLUS_DM** - Plus Directional Movement
-- [ ] **PPO** - Percentage Price Oscillator
-- [ ] **RENKO** - Renko Chart
 - [x] **RMA** - Rolling Moving Average
 - [x] **ROC** - Rate of change : ((price/prevPrice)-1)*100
 - [x] **ROCP** - Rate of change Percentage: (price-prevPrice)/prevPrice
@@ -206,20 +243,15 @@ Recommend Rust version `>=1.80`.
 - [x] **ROCR100** - Rate of change ratio 100 scale: (price/prevPrice)*100
 - [x] **RSI** - Relative Strength Index
 - [x] **SAR** - Parabolic SAR
-- [ ] **SAREXT** - Parabolic SAR - Extended
 - [x] **SMA** - Simple Moving Average
 - [x] **STOCH** - Stochastic **[No Incremental]**
-- [ ] **STOCHF** - Stochastic Fast
-- [ ] **STOCHRSI** - Stochastic Relative Strength Index
 - [x] **SUPERTREND** - Super Trend Indicator
 - [x] **T3** - Triple Exponential Moving Average (T3)
 - [x] **TEMA** - Triple Exponential Moving Average
 - [x] **TRANGE** - True Range
 - [x] **TRIMA** - Triangular Moving Average
 - [x] **TRIX** - 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA
-- [ ] **TSF** - Time Series Forecast
 - [x] **TYPPRICE** - Typical Price
-- [ ] **ULTOSC** - Ultimate Oscillator
 - [x] **VEGAS** - VEGAS Channel and Trend Boundary EMAs **[Untested]**
 - [x] **VWAP** - Volume Weighted Average Price
 - [x] **WCLPRICE** - Weighted Close Price

@@ -66,7 +66,7 @@ pub const fn lookback() -> Result<usize, KandError> {
 /// * `KandError::InvalidData` - Input array is empty or too short
 /// * `KandError::LengthMismatch` - Input/output arrays have different lengths
 /// * `KandError::InsufficientData` - Input length <= lookback period
-/// * `KandError::NaNDetected` - Input contains NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -143,7 +143,7 @@ pub fn ecl(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for i in 0..len {
             // NaN check
@@ -153,21 +153,21 @@ pub fn ecl(
         }
     }
 
-    let param_factor = 1.1;
+    let opt_factor = 1.1;
 
     for i in lookback..len {
         let range = input_high[i - 1] - input_low[i - 1];
         let h5_val = (input_high[i - 1] / input_low[i - 1]) * input_close[i - 1];
 
         output_h5[i] = h5_val;
-        output_h4[i] = input_close[i - 1] + range * param_factor / 2.0;
-        output_h3[i] = input_close[i - 1] + range * param_factor / 4.0;
-        output_h2[i] = input_close[i - 1] + range * param_factor / 6.0;
-        output_h1[i] = input_close[i - 1] + range * param_factor / 12.0;
-        output_l1[i] = input_close[i - 1] - range * param_factor / 12.0;
-        output_l2[i] = input_close[i - 1] - range * param_factor / 6.0;
-        output_l3[i] = input_close[i - 1] - range * param_factor / 4.0;
-        output_l4[i] = input_close[i - 1] - range * param_factor / 2.0;
+        output_h4[i] = input_close[i - 1] + range * opt_factor / 2.0;
+        output_h3[i] = input_close[i - 1] + range * opt_factor / 4.0;
+        output_h2[i] = input_close[i - 1] + range * opt_factor / 6.0;
+        output_h1[i] = input_close[i - 1] + range * opt_factor / 12.0;
+        output_l1[i] = input_close[i - 1] - range * opt_factor / 12.0;
+        output_l2[i] = input_close[i - 1] - range * opt_factor / 6.0;
+        output_l3[i] = input_close[i - 1] - range * opt_factor / 4.0;
+        output_l4[i] = input_close[i - 1] - range * opt_factor / 2.0;
         output_l5[i] = input_close[i - 1] - (h5_val - input_close[i - 1]);
     }
 
@@ -218,7 +218,7 @@ pub fn ecl(
 /// * `Result<(TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat,TAFloat), KandError>` - Tuple containing (H5,H4,H3,H2,H1,L1,L2,L3,L4,L5)
 ///
 /// # Errors
-/// * `KandError::NaNDetected` - Input contains NaN (when `deep-check` enabled)
+/// * `KandError::NaNDetected` - Input contains NaN (when `check-nan` enabled)
 ///
 /// # Example
 /// ```
@@ -250,7 +250,7 @@ pub fn ecl_inc(
     ),
     KandError,
 > {
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if prev_high.is_nan() || prev_low.is_nan() || prev_close.is_nan() {
@@ -258,18 +258,18 @@ pub fn ecl_inc(
         }
     }
 
-    let param_factor = 1.1;
+    let opt_factor = 1.1;
     let range = prev_high - prev_low;
     let h5_val = (prev_high / prev_low) * prev_close;
 
-    let h4 = prev_close + range * param_factor / 2.0;
-    let h3 = prev_close + range * param_factor / 4.0;
-    let h2 = prev_close + range * param_factor / 6.0;
-    let h1 = prev_close + range * param_factor / 12.0;
-    let l1 = prev_close - range * param_factor / 12.0;
-    let l2 = prev_close - range * param_factor / 6.0;
-    let l3 = prev_close - range * param_factor / 4.0;
-    let l4 = prev_close - range * param_factor / 2.0;
+    let h4 = prev_close + range * opt_factor / 2.0;
+    let h3 = prev_close + range * opt_factor / 4.0;
+    let h2 = prev_close + range * opt_factor / 6.0;
+    let h1 = prev_close + range * opt_factor / 12.0;
+    let l1 = prev_close - range * opt_factor / 12.0;
+    let l2 = prev_close - range * opt_factor / 6.0;
+    let l3 = prev_close - range * opt_factor / 4.0;
+    let l4 = prev_close - range * opt_factor / 2.0;
     let l5 = prev_close - (h5_val - prev_close);
 
     Ok((h5_val, h4, h3, h2, h1, l1, l2, l3, l4, l5))

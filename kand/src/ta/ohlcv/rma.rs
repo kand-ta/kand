@@ -7,7 +7,7 @@ use crate::{KandError, TAFloat};
 /// to calculate the first value.
 ///
 /// # Arguments
-/// * `param_period` - The period length used for RMA calculation (must be >= 2)
+/// * `opt_period` - The period length used for RMA calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period on success
@@ -22,15 +22,15 @@ use crate::{KandError, TAFloat};
 /// let lookback = rma::lookback(period).unwrap();
 /// assert_eq!(lookback, 13); // lookback is period - 1
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates the Running Moving Average (RMA) for a price series.
@@ -51,7 +51,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 ///
 /// # Arguments
 /// * `input` - Array of price values to calculate RMA
-/// * `param_period` - The smoothing period (must be >= 2)
+/// * `opt_period` - The smoothing period (must be >= 2)
 /// * `output_rma` - Array to store calculated RMA values
 ///
 /// # Returns
@@ -62,7 +62,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `KandError::LengthMismatch` - If input and output arrays have different lengths
 /// * `KandError::InvalidParameter` - If period is less than 2
 /// * `KandError::InsufficientData` - If input length is less than period
-/// * `KandError::NaNDetected` - If input contains NaN values (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If input contains NaN values (with "`check-nan`" feature)
 ///
 /// # Examples
 /// ```
@@ -74,11 +74,11 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// ```
 pub fn rma(
     input: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_rma: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -98,7 +98,7 @@ pub fn rma(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         for price in input.iter().take(len) {
             // NaN check
@@ -110,19 +110,19 @@ pub fn rma(
 
     // Calculate first SMA value
     let mut sum = input[0];
-    for value in input.iter().take(param_period).skip(1) {
+    for value in input.iter().take(opt_period).skip(1) {
         sum += *value;
     }
-    let alpha = 1.0 / param_period as TAFloat;
-    output_rma[param_period - 1] = sum / param_period as TAFloat;
+    let alpha = 1.0 / opt_period as TAFloat;
+    output_rma[opt_period - 1] = sum / opt_period as TAFloat;
 
     // Calculate RMA for remaining values
-    for i in param_period..input.len() {
+    for i in opt_period..input.len() {
         output_rma[i] = input[i].mul_add(alpha, output_rma[i - 1] * (1.0 - alpha));
     }
 
     // Fill initial values with NAN
-    for value in output_rma.iter_mut().take(param_period - 1) {
+    for value in output_rma.iter_mut().take(opt_period - 1) {
         *value = TAFloat::NAN;
     }
 
@@ -143,14 +143,14 @@ pub fn rma(
 /// # Arguments
 /// * `input_current` - The current price value
 /// * `prev_rma` - The previous RMA value
-/// * `param_period` - The smoothing period (must be >= 2)
+/// * `opt_period` - The smoothing period (must be >= 2)
 ///
 /// # Returns
 /// * `Result<TAFloat, KandError>` - The new RMA value on success
 ///
 /// # Errors
 /// * `KandError::InvalidParameter` - If period is less than 2
-/// * `KandError::NaNDetected` - If any input is NaN (with "`deep-check`" feature)
+/// * `KandError::NaNDetected` - If any input is NaN (with "`check-nan`" feature)
 ///
 /// # Examples
 /// ```
@@ -163,17 +163,17 @@ pub fn rma(
 pub fn rma_inc(
     input_current: TAFloat,
     prev_rma: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<TAFloat, KandError> {
     #[cfg(feature = "check")]
     {
         // Parameter range check
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         if input_current.is_nan() || prev_rma.is_nan() {
@@ -181,7 +181,7 @@ pub fn rma_inc(
         }
     }
 
-    let alpha = 1.0 / param_period as TAFloat;
+    let alpha = 1.0 / opt_period as TAFloat;
     Ok(input_current.mul_add(alpha, prev_rma * (1.0 - alpha)))
 }
 
@@ -194,13 +194,13 @@ mod tests {
     #[test]
     fn test_rma_calculation() {
         let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
-        let param_period = 5;
+        let opt_period = 5;
         let mut output_rma = vec![0.0; input.len()];
 
-        rma(&input, param_period, &mut output_rma).unwrap();
+        rma(&input, opt_period, &mut output_rma).unwrap();
 
         // First (period-1) values should be NaN
-        for value in output_rma.iter().take(param_period - 1) {
+        for value in output_rma.iter().take(opt_period - 1) {
             assert!(value.is_nan());
         }
 
@@ -227,14 +227,14 @@ mod tests {
     #[test]
     fn test_rma_incremental() {
         let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
-        let param_period = 4;
+        let opt_period = 4;
         let mut output_rma = vec![0.0; input.len()];
 
-        rma(&input, param_period, &mut output_rma).unwrap();
+        rma(&input, opt_period, &mut output_rma).unwrap();
 
         // Test incremental calculation matches regular calculation
         // Start from the first valid RMA value (after the lookback period)
-        let lookback = lookback(param_period).unwrap();
+        let lookback = lookback(opt_period).unwrap();
 
         // Start with the first valid RMA value
         let mut prev_rma = output_rma[lookback];
@@ -242,7 +242,7 @@ mod tests {
         // Test each incremental step
         for i in lookback + 1..input.len() {
             // Calculate next RMA using incremental method
-            let next_rma = rma_inc(input[i], prev_rma, param_period).unwrap();
+            let next_rma = rma_inc(input[i], prev_rma, opt_period).unwrap();
 
             // Verify incremental result matches the regular calculation
             assert_relative_eq!(next_rma, output_rma[i], epsilon = 1e-12);

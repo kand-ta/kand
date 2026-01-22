@@ -8,13 +8,13 @@ use crate::{KandError, TAFloat, TAInt, types::Signal};
 /// The lookback period is equal to the ATR period.
 ///
 /// # Arguments
-/// * `param_period` - The period used for ATR calculation, must be >= 2
+/// * `opt_period` - The period used for ATR calculation, must be >= 2
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period if successful
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - If `param_period` < 2
+/// * `KandError::InvalidParameter` - If `opt_period` < 2
 ///
 /// # Example
 /// ```
@@ -24,8 +24,8 @@ use crate::{KandError, TAFloat, TAInt, types::Signal};
 /// let lookback_period = lookback(period).unwrap();
 /// assert_eq!(lookback_period, 14);
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
-    atr::lookback(param_period)
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
+    atr::lookback(opt_period)
 }
 
 /// Calculates Supertrend values for the entire price series
@@ -70,8 +70,8 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * `input_high` - Array of high prices
 /// * `input_low` - Array of low prices
 /// * `input_close` - Array of closing prices
-/// * `param_period` - ATR calculation period (typically 7-14)
-/// * `param_multiplier` - ATR multiplier (typically 2-4)
+/// * `opt_period` - ATR calculation period (typically 7-14)
+/// * `opt_multiplier` - ATR multiplier (typically 2-4)
 /// * `output_trend` - Output array for trend signals:
 ///   - 1: Uptrend
 ///   - 0: Initial/undefined
@@ -87,16 +87,16 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Errors
 /// * `KandError::InvalidData` - Empty input arrays
 /// * `KandError::LengthMismatch` - Input/output arrays have different lengths
-/// * `KandError::InvalidParameter` - Invalid `param_period` (<2)
+/// * `KandError::InvalidParameter` - Invalid `opt_period` (<2)
 /// * `KandError::InsufficientData` - Input length less than required lookback
-/// * `KandError::NaNDetected` - NaN values in input (with `deep-check` feature)
+/// * `KandError::NaNDetected` - NaN values in input (with `check-nan` feature)
 /// * `KandError::ConversionError` - Numeric conversion error
 pub fn supertrend(
     input_high: &[TAFloat],
     input_low: &[TAFloat],
     input_close: &[TAFloat],
-    param_period: usize,
-    param_multiplier: TAFloat,
+    opt_period: usize,
+    opt_multiplier: TAFloat,
     output_trend: &mut [TAInt],
     output_supertrend: &mut [TAFloat],
     output_atr: &mut [TAFloat],
@@ -104,7 +104,7 @@ pub fn supertrend(
     output_lower: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_high.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -131,7 +131,7 @@ pub fn supertrend(
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check
         for i in 0..len {
@@ -142,7 +142,7 @@ pub fn supertrend(
     }
 
     // Calculate ATR
-    atr::atr(input_high, input_low, input_close, param_period, output_atr)?;
+    atr::atr(input_high, input_low, input_close, opt_period, output_atr)?;
 
     let mut basic_upper = vec![0.0; len];
     let mut basic_lower = vec![0.0; len];
@@ -155,8 +155,8 @@ pub fn supertrend(
     // Calculate basic bands
     for i in lookback..len {
         let hl2 = f64::midpoint(input_high[i], input_low[i]);
-        basic_upper[i] = param_multiplier.mul_add(output_atr[i], hl2);
-        basic_lower[i] = param_multiplier.mul_add(-output_atr[i], hl2);
+        basic_upper[i] = opt_multiplier.mul_add(output_atr[i], hl2);
+        basic_lower[i] = opt_multiplier.mul_add(-output_atr[i], hl2);
     }
 
     // Initialize the first valid point (at lookback)
@@ -246,8 +246,8 @@ pub fn supertrend(
 /// * `prev_trend` - Previous period's trend (1: up, -1: down)
 /// * `prev_upper` - Previous period's upper band
 /// * `prev_lower` - Previous period's lower band
-/// * `param_period` - ATR calculation period (typically 7-14)
-/// * `param_multiplier` - ATR multiplier (typically 2-4)
+/// * `opt_period` - ATR calculation period (typically 7-14)
+/// * `opt_multiplier` - ATR multiplier (typically 2-4)
 ///
 /// # Returns
 /// * `Ok((TAInt, TAFloat, TAFloat, TAFloat, TAFloat))` - Tuple containing:
@@ -258,8 +258,8 @@ pub fn supertrend(
 ///   - Current lower band
 ///
 /// # Errors
-/// * `KandError::InvalidParameter` - Invalid `param_period` (<2)
-/// * `KandError::NaNDetected` - NaN values in input (with `deep-check` feature)
+/// * `KandError::InvalidParameter` - Invalid `opt_period` (<2)
+/// * `KandError::NaNDetected` - NaN values in input (with `check-nan` feature)
 /// * `KandError::ConversionError` - Numeric conversion error
 pub fn supertrend_inc(
     input_high: TAFloat,
@@ -270,17 +270,17 @@ pub fn supertrend_inc(
     prev_trend: TAInt,
     prev_upper: TAFloat,
     prev_lower: TAFloat,
-    param_period: usize,
-    param_multiplier: TAFloat,
+    opt_period: usize,
+    opt_multiplier: TAFloat,
 ) -> Result<(TAInt, TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         if input_high.is_nan()
             || input_low.is_nan()
@@ -289,17 +289,17 @@ pub fn supertrend_inc(
             || prev_atr.is_nan()
             || prev_upper.is_nan()
             || prev_lower.is_nan()
-            || param_multiplier.is_nan()
+            || opt_multiplier.is_nan()
         {
             return Err(KandError::NaNDetected);
         }
     }
 
-    let output_atr = atr::atr_inc(input_high, input_low, prev_close, prev_atr, param_period)?;
+    let output_atr = atr::atr_inc(input_high, input_low, prev_close, prev_atr, opt_period)?;
 
     let hl2 = f64::midpoint(input_high, input_low);
-    let basic_upper = param_multiplier.mul_add(output_atr, hl2);
-    let basic_lower = param_multiplier.mul_add(-output_atr, hl2);
+    let basic_upper = opt_multiplier.mul_add(output_atr, hl2);
+    let basic_lower = opt_multiplier.mul_add(-output_atr, hl2);
 
     let output_upper = if prev_close <= prev_upper {
         basic_upper.min(prev_upper)
@@ -363,8 +363,8 @@ mod tests {
         ];
 
         let len = input_high.len();
-        let param_period = 10;
-        let param_multiplier = 3.0;
+        let opt_period = 10;
+        let opt_multiplier = 3.0;
 
         let mut output_trend = vec![0; len];
         let mut output_supertrend = vec![0.0; len];
@@ -376,8 +376,8 @@ mod tests {
             &input_high,
             &input_low,
             &input_close,
-            param_period,
-            param_multiplier,
+            opt_period,
+            opt_multiplier,
             &mut output_trend,
             &mut output_supertrend,
             &mut output_atr,
@@ -443,8 +443,8 @@ mod tests {
             prev_trend,
             prev_upper,
             prev_lower,
-            param_period,
-            param_multiplier,
+            opt_period,
+            opt_multiplier,
         )
         .unwrap();
 

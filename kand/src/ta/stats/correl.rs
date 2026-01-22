@@ -6,7 +6,7 @@ use crate::{KandError, TAFloat};
 /// can be calculated. For Correlation, this equals the period minus 1.
 ///
 /// # Arguments
-/// * `param_period` - The time period for Correlation calculation (must be >= 2)
+/// * `opt_period` - The time period for Correlation calculation (must be >= 2)
 ///
 /// # Returns
 /// * `Result<usize, KandError>` - The lookback period (period - 1) on success, or error on failure
@@ -21,14 +21,14 @@ use crate::{KandError, TAFloat};
 /// let lookback = correl::lookback(period).unwrap();
 /// assert_eq!(lookback, 29); // lookback is period - 1
 /// ```
-pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
+pub const fn lookback(opt_period: usize) -> Result<usize, KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
-    Ok(param_period - 1)
+    Ok(opt_period - 1)
 }
 
 /// Calculates the Pearson Correlation Coefficient (CORREL) for two price series.
@@ -63,7 +63,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// # Arguments
 /// * `input_0` - First input series
 /// * `input_1` - Second input series
-/// * `param_period` - The time period for correlation calculation (must be >= 2)
+/// * `opt_period` - The time period for correlation calculation (must be >= 2)
 /// * `output_correl` - Array to store calculated correlation values
 /// * `output_sum_0` - Array to store running sum of series 0
 /// * `output_sum_1` - Array to store running sum of series 1
@@ -79,7 +79,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 /// * Returns `KandError::LengthMismatch` if arrays have different lengths
 /// * Returns `KandError::InvalidParameter` if period is less than 2
 /// * Returns `KandError::InsufficientData` if input length is less than period
-/// * Returns `KandError::NaNDetected` if input contains NaN values (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if input contains NaN values (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -111,7 +111,7 @@ pub const fn lookback(param_period: usize) -> Result<usize, KandError> {
 pub fn correl(
     input_0: &[TAFloat],
     input_1: &[TAFloat],
-    param_period: usize,
+    opt_period: usize,
     output_correl: &mut [TAFloat],
     output_sum_0: &mut [TAFloat],
     output_sum_1: &mut [TAFloat],
@@ -120,7 +120,7 @@ pub fn correl(
     output_sum_01: &mut [TAFloat],
 ) -> Result<(), KandError> {
     let len = input_0.len();
-    let lookback = lookback(param_period)?;
+    let lookback = lookback(opt_period)?;
 
     #[cfg(feature = "check")]
     {
@@ -147,12 +147,12 @@ pub fn correl(
         }
 
         // Parameter validation
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check for both input series
         for i in 0..len {
@@ -170,7 +170,7 @@ pub fn correl(
     let mut sum_01 = 0.0;
 
     // Initialize sums for the first window
-    for i in 0..param_period {
+    for i in 0..opt_period {
         let val_0 = input_0[i];
         let val_1 = input_1[i];
 
@@ -189,7 +189,7 @@ pub fn correl(
     output_sum_01[lookback] = sum_01;
 
     // Calculate first correlation value
-    let n = param_period as TAFloat;
+    let n = opt_period as TAFloat;
     let numerator = n.mul_add(sum_01, -(sum_0 * sum_1));
     let denominator_0 = n.mul_add(sum_0_sq, -(sum_0 * sum_0));
     let denominator_1 = n.mul_add(sum_1_sq, -(sum_1 * sum_1));
@@ -202,10 +202,10 @@ pub fn correl(
     }
 
     // Calculate subsequent correlations using sliding window
-    for i in param_period..len {
+    for i in opt_period..len {
         // Remove old values and add new values
-        let old_0 = input_0[i - param_period];
-        let old_1 = input_1[i - param_period];
+        let old_0 = input_0[i - opt_period];
+        let old_1 = input_1[i - opt_period];
         let new_0 = input_0[i];
         let new_1 = input_1[i];
 
@@ -269,7 +269,7 @@ pub fn correl(
 /// * `prev_sum_0_sq` - Previous sum of squares of series 0
 /// * `prev_sum_1_sq` - Previous sum of squares of series 1
 /// * `prev_sum_01` - Previous sum of products
-/// * `param_period` - The time period (must be >= 2)
+/// * `opt_period` - The time period (must be >= 2)
 ///
 /// # Returns
 /// * `Result<(TAFloat, TAFloat, TAFloat, TAFloat, TAFloat, TAFloat), KandError>` - Tuple containing:
@@ -282,7 +282,7 @@ pub fn correl(
 ///
 /// # Errors
 /// * Returns `KandError::InvalidParameter` if period is less than 2
-/// * Returns `KandError::NaNDetected` if any input contains NaN (with "`deep-check`" feature)
+/// * Returns `KandError::NaNDetected` if any input contains NaN (with "`check-nan`" feature)
 ///
 /// # Example
 /// ```
@@ -315,16 +315,16 @@ pub fn correl_inc(
     prev_sum_0_sq: TAFloat,
     prev_sum_1_sq: TAFloat,
     prev_sum_01: TAFloat,
-    param_period: usize,
+    opt_period: usize,
 ) -> Result<(TAFloat, TAFloat, TAFloat, TAFloat, TAFloat, TAFloat), KandError> {
     #[cfg(feature = "check")]
     {
-        if param_period < 2 {
+        if opt_period < 2 {
             return Err(KandError::InvalidParameter);
         }
     }
 
-    #[cfg(feature = "deep-check")]
+    #[cfg(feature = "check-nan")]
     {
         // NaN check for all inputs
         if input_new_0.is_nan()
@@ -356,7 +356,7 @@ pub fn correl_inc(
         input_new_0.mul_add(input_new_1, input_old_0.mul_add(-input_old_1, prev_sum_01));
 
     // Calculate new correlation using Pearson formula
-    let n = param_period as TAFloat;
+    let n = opt_period as TAFloat;
     let numerator = n.mul_add(new_sum_01, -(new_sum_0 * new_sum_1));
     let denominator_0 = n.mul_add(new_sum_0_sq, -(new_sum_0 * new_sum_0));
     let denominator_1 = n.mul_add(new_sum_1_sq, -(new_sum_1 * new_sum_1));
@@ -389,7 +389,7 @@ mod tests {
         // Test with perfectly correlated data (y = 2x)
         let input_0 = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
         let input_1 = vec![2.0, 4.0, 6.0, 8.0, 10.0, 12.0];
-        let param_period = 3;
+        let opt_period = 3;
         let mut output_correl = vec![0.0; 6];
         let mut output_sum_0 = vec![0.0; 6];
         let mut output_sum_1 = vec![0.0; 6];
@@ -400,7 +400,7 @@ mod tests {
         correl(
             &input_0,
             &input_1,
-            param_period,
+            opt_period,
             &mut output_correl,
             &mut output_sum_0,
             &mut output_sum_1,
@@ -425,14 +425,14 @@ mod tests {
             let (inc_correl, _, _, _, _, _) = correl_inc(
                 input_0[i],
                 input_1[i],
-                input_0[i - param_period],
-                input_1[i - param_period],
+                input_0[i - opt_period],
+                input_1[i - opt_period],
                 output_sum_0[i - 1],
                 output_sum_1[i - 1],
                 output_sum_0_sq[i - 1],
                 output_sum_1_sq[i - 1],
                 output_sum_01[i - 1],
-                param_period,
+                opt_period,
             )
             .unwrap();
             assert_relative_eq!(inc_correl, output_correl[i], epsilon = 0.0001);
@@ -444,7 +444,7 @@ mod tests {
         // Test with perfectly negative correlated data (y = -x + 10)
         let input_0 = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let input_1 = vec![9.0, 8.0, 7.0, 6.0, 5.0];
-        let param_period = 3;
+        let opt_period = 3;
         let mut output_correl = vec![0.0; 5];
         let mut output_sum_0 = vec![0.0; 5];
         let mut output_sum_1 = vec![0.0; 5];
@@ -455,7 +455,7 @@ mod tests {
         correl(
             &input_0,
             &input_1,
-            param_period,
+            opt_period,
             &mut output_correl,
             &mut output_sum_0,
             &mut output_sum_1,
@@ -476,7 +476,7 @@ mod tests {
         // Test when one series has no variance
         let input_0 = vec![5.0, 5.0, 5.0, 5.0, 5.0];
         let input_1 = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-        let param_period = 3;
+        let opt_period = 3;
         let mut output_correl = vec![0.0; 5];
         let mut output_sum_0 = vec![0.0; 5];
         let mut output_sum_1 = vec![0.0; 5];
@@ -487,7 +487,7 @@ mod tests {
         correl(
             &input_0,
             &input_1,
-            param_period,
+            opt_period,
             &mut output_correl,
             &mut output_sum_0,
             &mut output_sum_1,
@@ -537,7 +537,7 @@ mod tests {
             3476.87, 3546.92, 3552.85,
         ];
 
-        let param_period = 14;
+        let opt_period = 14;
         let len = input_0.len();
         let mut output_correl = vec![0.0; len];
         let mut output_sum_0 = vec![0.0; len];
@@ -549,7 +549,7 @@ mod tests {
         correl(
             &input_0,
             &input_1,
-            param_period,
+            opt_period,
             &mut output_correl,
             &mut output_sum_0,
             &mut output_sum_1,
